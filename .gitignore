@@ -1,3 +1,6 @@
 node_modules/
+*.hi
+*.o
+**/*/Main
 **/*/node_modules/
 .log/
