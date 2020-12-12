@@ -50,7 +50,6 @@ rootNode = "shinygold"
 
 createMapP2 :: [(String, [a])] -> Map.Map String [a]
 createMapP2 = Map.fromListWith (++)
-
 createTreeP2 :: Ord k => (a, k) -> Map.Map k [(a, k)] -> Tree (a, k)
 createTreeP2 root m = case Map.lookup (snd root) m of
   Just xs -> Node root (fmap (`createTreeP2` m) xs)
@@ -67,6 +66,9 @@ part1 graph vertex =
 
 part2 :: [(String, [(Int, String)])] -> Int
 part2 = solveP2 1 . fmap fst . createTreeP2 (1, rootNode) . createMapP2
+
+pairToTriple :: Functor f => (b1, f (a, b2)) -> (b1, b1, f b2)
+pairToTriple (a, b) = (a, a, snd <$> b)
 
 main :: IO ()
 main = do
