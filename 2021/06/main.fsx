@@ -1,37 +1,27 @@
-let empty: Map<int64, int64> =
-    Map.ofList [ (0L, 0L)
-                 (1L, 0L)
-                 (2L, 0L)
-                 (3L, 0L)
-                 (4L, 0L)
-                 (5L, 0L)
-                 (6L, 0L)
-                 (7L, 0L)
-                 (8L, 0L) ]
+let empty =
+    Map.ofList (List.init 9 (fun i -> (i, 0L)))
 
 let incrementKey map k =
     map
-    |> Map.change k (function
-        | Some v -> Some(v + 1L)
-        | None -> Some 1L)
+    |> Map.add k ((Map.tryFind k map |> Option.defaultValue 0L) + 1L)
 
 let parseInput (s: string) =
     s.Split(",")
-    |> Array.map int64
+    |> Array.map int
     |> Array.fold incrementKey empty
 
 
-let simulateDay map =
+let simulateDay (map: Map<int, int64>) =
     map
-    |> Map.add 0L (Map.find 1L map)
-    |> Map.add 1L (Map.find 2L map)
-    |> Map.add 2L (Map.find 3L map)
-    |> Map.add 3L (Map.find 4L map)
-    |> Map.add 4L (Map.find 5L map)
-    |> Map.add 5L (Map.find 6L map)
-    |> Map.add 6L ((Map.find 7L map) + (Map.find 0L map))
-    |> Map.add 7L (Map.find 8L map)
-    |> Map.add 8L (Map.find 0L map)
+    |> Map.add 0 (Map.find 1 map)
+    |> Map.add 1 (Map.find 2 map)
+    |> Map.add 2 (Map.find 3 map)
+    |> Map.add 3 (Map.find 4 map)
+    |> Map.add 4 (Map.find 5 map)
+    |> Map.add 5 (Map.find 6 map)
+    |> Map.add 6 ((Map.find 7 map) + (Map.find 0 map))
+    |> Map.add 7 (Map.find 8 map)
+    |> Map.add 8 (Map.find 0 map)
 
 let rec simulateDays count map =
     match count with
