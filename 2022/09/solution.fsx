@@ -1,5 +1,10 @@
 type Coordinates = int * int
-type Movement = Up | Down | Left | Right
+
+type Movement =
+  | Up
+  | Down
+  | Left
+  | Right
 
 let update move (x, y) =
   match move with
@@ -11,6 +16,7 @@ let update move (x, y) =
 let updateTail (headX, headY) (x, y) =
   let dx = headX - x
   let dy = headY - y
+
   if abs dx <= 1 && abs dy <= 1 then
     x, y
   elif abs dx > 1 && dy = 0 then
@@ -25,27 +31,43 @@ let updateTail (headX, headY) (x, y) =
     x + stepX, y + stepY
 
 module Part1 =
-  type State = { Head: Coordinates; Tail: Coordinates; Visited: Set<Coordinates> }
+  type State =
+    { Head: Coordinates
+      Tail: Coordinates
+      Visited: Set<Coordinates> }
 
-  let initial = { Head = 0,0; Tail = 0,0; Visited = Set.singleton (0,0)}
+  let initial =
+    { Head = 0, 0
+      Tail = 0, 0
+      Visited = Set.singleton (0, 0) }
+
   let evolve state move =
-    let head = update  move state.Head
+    let head = update move state.Head
     let tail = updateTail head state.Tail
 
-    { Head = head; Tail = tail; Visited = state.Visited |> Set.add tail }
+    { Head = head
+      Tail = tail
+      Visited = state.Visited |> Set.add tail }
 
 module Part2 =
-  type State = { Knots: Coordinates list; Visited: Set<Coordinates> }
-  let initial = { Knots = List.init 10 (fun _ -> 0,0); Visited = Set.singleton (0,0) }
+  type State =
+    { Knots: Coordinates list
+      Visited: Set<Coordinates> }
+
+  let initial =
+    { Knots = List.init 10 (fun _ -> 0, 0)
+      Visited = Set.singleton (0, 0) }
+
   let evolve state move =
     let head = List.head state.Knots |> update move
+
     let knots =
-      (head ::
-      (state.Knots
-      |> List.skip 1))
+      (head :: (state.Knots |> List.skip 1))
       |> List.pairwise
       |> List.map (fun (head, tail) -> updateTail head tail)
-    { Knots = head::knots; Visited = Set.add (List.last knots) state.Visited }
+
+    { Knots = head :: knots
+      Visited = Set.add (List.last knots) state.Visited }
 
 
 let parseLine (s: string) =
@@ -60,16 +82,16 @@ let parseLine (s: string) =
 let readLines = System.IO.File.ReadAllLines
 
 readLines "./input.txt"
-  |> Seq.choose parseLine
-  |> Seq.collect id
-  |> Seq.fold Part1.evolve Part1.initial
-  |> (fun s -> s.Visited |> Set.count)
-  |> printfn "Part 1: %A"
+|> Seq.choose parseLine
+|> Seq.collect id
+|> Seq.fold Part1.evolve Part1.initial
+|> (fun s -> s.Visited |> Set.count)
+|> printfn "Part 1: %A"
 
 
 readLines "./input.txt"
-  |> Seq.choose parseLine
-  |> Seq.collect id
-  |> Seq.fold Part2.evolve Part2.initial
-  |> (fun s -> s.Visited |> Set.count)
-  |> printfn "Part 1: %A"
+|> Seq.choose parseLine
+|> Seq.collect id
+|> Seq.fold Part2.evolve Part2.initial
+|> (fun s -> s.Visited |> Set.count)
+|> printfn "Part 1: %A"
