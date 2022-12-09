@@ -94,4 +94,4 @@ readLines "./input.txt"
 |> Seq.collect id
 |> Seq.fold Part2.evolve Part2.initial
 |> (fun s -> s.Visited |> Set.count)
-|> printfn "Part 1: %A"
+|> printfn "Part 2: %A"
