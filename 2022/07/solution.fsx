@@ -1,43 +1,29 @@
 open System
 open System.Text.RegularExpressions
+open System.IO
 
 let readLines = IO.File.ReadAllLines
 
-type Node =
-  | File of size: int * name: string
-  | Directory of Directory
 
-and Directory =
-  { path: string
-    parent: Directory option
-    children: ResizeArray<Node> }
-
-
-let initial =
-  { path = "/"
-    parent = None
-    children = ResizeArray() }
+type State = { cwd: string; fs: Map<string, int> }
+let initial = { cwd = "/dev/random"; fs = Map.empty }
 
 let (|ChangeDirectory|_|) (line: string) =
-  if line.StartsWith("$ cd") then
-    Some(line.Substring 4)
+  if line.StartsWith("$ cd ") then
+    Some(line.Substring 5)
   else
     None
-
-let (|ChangeDirectoryUp|_|) (line: string) =
-  if line.StartsWith("$ cd ..") then Some() else None
-
 
 let (|ListDirectory|_|) (line: string) = if line = "$ ls" then Some() else None
 
 let (|Dir|_|) (line: string) =
   if line.StartsWith("dir ") then
-    Some(line.Substring 4)
+    Some()
   else
     None
 
 let (|File|_|) (line: string) =
-  let regexp = Regex "([0-9]+) ([a-z]+)"
+  let regexp = Regex "([0-9]+) ([a-z.]+)"
   let matching = regexp.Match(line)
 
   if matching.Success then
@@ -50,84 +36,59 @@ let (|File|_|) (line: string) =
 
 let evolve state (line: string) =
   match line with
-  | ChangeDirectoryUp -> state.parent |> Option.get
   | ChangeDirectory path ->
-    let dir =
-      state.children
-      |> Seq.tryPick (function
-        | Directory(dir) when dir.path = path -> Some dir
-        | _ -> None)
-
-    match dir with
-    | Some dir -> dir
-    | None ->
-      let dir =
-        { path = path
-          parent = Some state
-          children = ResizeArray() }
-
-      state.children.Add(Node.Directory dir)
-      dir
+    let newPath = if path.StartsWith "/" then path else Path.GetFullPath(state.cwd + "/" + path) 
+    { state with cwd = newPath }
   | ListDirectory -> state
   | File(size, name) ->
-    let file = Node.File(size, name)
-
-    if not (state.children |> Seq.contains file) then
-      state.children.Add(file)
-
-    state
-  | Dir _path -> state
+    let filePath = Path.Combine(state.cwd, name)
+    { state with fs = Map.add filePath size state.fs }
+  | Dir -> state
   | s -> failwithf "Unexpected %s" s
 
-let rec getRoot tree =
-  match tree.parent with
-  | Some parent -> getRoot parent
-  | None -> tree
 
-let rec calculateSize dir =
-  match dir with
-  | Node.Directory dir -> Seq.sumBy calculateSize dir.children
-  | Node.File(size, _) -> size
+let allDirectories (dir: string) =
+  dir
+    |> List.unfold (function
+      | null -> None
+      | dir -> Some(dir, Path.GetDirectoryName dir))
 
-let chooseDirectories =
-  Seq.choose (function
-    | Directory dir -> Some dir
-    | _ -> None)
+let part1 (map: Map<string, int>) =
+  let fileList = map |> Map.toList
+  fileList
+  |> List.collect (fst >> Path.GetDirectoryName >> allDirectories)
+  |> Set.ofList
+  |> Seq.map (fun dir -> fileList |> List.choose(fun (path, size)-> if path.StartsWith(dir) then Some size else None) |> List.sum)
+  |> Seq.filter(fun size -> size <= 100000)
+  |> Seq.sum
 
-let rec part1 (tree: Directory) =
-  let size = tree.children |> Seq.sumBy calculateSize
-  let childSize = tree.children |> chooseDirectories |> Seq.sumBy part1
-  if size <= 100000 then size + childSize else childSize
+let rec findDirectoriesWithEnoughSpace space fs =
+  let fileList = fs |> Map.toList
+  fileList
+  |> List.collect (fst >> Path.GetDirectoryName >> allDirectories)
+  |> Set.ofList
+  |> Seq.map (fun dir -> dir, fileList |> List.choose(fun (path, size)-> if path.StartsWith(dir) then Some size else None) |> List.sum)
+  |> Seq.filter (snd >> fun size -> size >= space)
+  |> Seq.map snd
+  |> Seq.min
 
-let rec findDirectoriesWithEnoughSpace space (tree: Directory) =
-  let size = tree.children |> Seq.sumBy calculateSize
-
-  let childSizes =
-    chooseDirectories tree.children
-    |> Seq.collect (findDirectoriesWithEnoughSpace space)
-    |> Seq.toList
-
-  if size >= space then size :: childSizes else childSizes
-
-let part2 (tree: Directory) =
+let part2 (fs: Map<string, int>) =
   let requiredSpace = 30000000
   let totalSpace = 70000000
-  let usedSpace = calculateSize (Node.Directory tree)
+  let usedSpace = fs |> Map.toList |> List.sumBy snd
   let unusedSpace = totalSpace - usedSpace
   let spaceToFree = requiredSpace - unusedSpace
-  findDirectoriesWithEnoughSpace spaceToFree tree |> List.min
+  findDirectoriesWithEnoughSpace spaceToFree fs 
 
 readLines "./input.txt"
-|> Array.skip 1
 |> Array.fold evolve initial
-|> getRoot
+|> (fun s -> s.fs)
 |> part1
 |> printfn "Part 1: %i"
 
 
 readLines "./input.txt"
-|> Array.skip 1
 |> Array.fold evolve initial
-|> getRoot
+|> (fun s -> s.fs)
 |> part2
 |> printfn "Part 2: %A"
