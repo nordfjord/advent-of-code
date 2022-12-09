@@ -67,9 +67,8 @@ let rec findDirectoriesWithEnoughSpace space fs =
   fileList
   |> List.collect (fst >> Path.GetDirectoryName >> allDirectories)
   |> Set.ofList
-  |> Seq.map (fun dir -> dir, fileList |> List.choose(fun (path, size)-> if path.StartsWith(dir) then Some size else None) |> List.sum)
-  |> Seq.filter (snd >> fun size -> size >= space)
-  |> Seq.map snd
+  |> Seq.map (fun dir -> fileList |> List.choose(fun (path, size)-> if path.StartsWith(dir) then Some size else None) |> List.sum)
+  |> Seq.filter (fun size -> size >= space)
   |> Seq.min
 
 let part2 (fs: Map<string, int>) =
