@@ -19,22 +19,12 @@ let simulateRound worry_modifier divisor_product monkeys =
 
 let compare_desc a b = compare b a
 
-let print_monkeys monkeys =
-  monkeys
-  |> Array.iteri (fun i monkey ->
-         print_endline
-           ("Monkey " ^ string_of_int i ^ ": "
-           ^ (monkey.items |> List.map string_of_int |> String.concat ", ")
-           ^ " ("
-           ^ string_of_int monkey.inspectCount
-           ^ ")"))
+let product f arr = arr |> Array.fold_left (fun sum item -> sum * f item) 1
 
 let run rounds worry_modifier =
-  let monkeys = monkeys () in
-  let divisor_product =
-    monkeys |> Array.fold_left (fun sum m -> sum * m.testDivisor) 1
-  in
-  for round = 1 to rounds do
+  let monkeys = from_file Sys.argv.(1) in
+  let divisor_product = monkeys |> product (fun m -> m.testDivisor) in
+  for _ = 1 to rounds do
     simulateRound worry_modifier divisor_product monkeys
   done;
   let inspectCounts = monkeys |> Array.map (fun x -> x.inspectCount) in
@@ -42,9 +32,9 @@ let run rounds worry_modifier =
   let a, b = (inspectCounts.(0), inspectCounts.(1)) in
   a * b
 
-let part1_modifier x = x / 3
+let worry_modifier x = x / 3
 let id x = x
-let part1 () = run 20 part1_modifier
+let part1 () = run 20 worry_modifier
 let part2 () = run 10000 id
-let () = print_endline ("\n\nPart 1: " ^ (part1 () |> string_of_int))
+let () = print_endline ("Part 1: " ^ (part1 () |> string_of_int))
 let () = print_endline ("Part 2: " ^ (part2 () |> string_of_int))
