@@ -1,0 +1,5 @@
+lib: [
+  "_build/install/default/lib/2022/META"
+  "_build/install/default/lib/2022/dune-package"
+  "_build/install/default/lib/2022/opam"
+]

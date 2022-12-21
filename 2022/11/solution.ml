@@ -1,40 +1,41 @@
-open Monkey
-
 let simulateRound worry_modifier divisor_product monkeys =
+  let open Monkey in
   monkeys
-  |> Array.iter (fun monkey ->
+  |> List.iter (fun monkey ->
          monkey.items
          |> List.iter (fun item ->
-                monkey.inspectCount <- monkey.inspectCount + 1;
+                monkey.inspect_count <- monkey.inspect_count + 1;
                 let item = item mod divisor_product in
                 let op_result = monkey.operation item in
                 let new_worry = worry_modifier op_result in
                 let new_monkey =
-                  if new_worry mod monkey.testDivisor = 0 then
-                    monkeys.(monkey.whenTrue)
-                  else monkeys.(monkey.whenFalse)
+                  if new_worry mod monkey.divisor = 0 then
+                    List.nth monkeys monkey.on_true
+                  else List.nth monkeys monkey.on_false
                 in
                 new_monkey.items <- new_worry :: new_monkey.items);
          monkey.items <- [])
 
 let compare_desc a b = compare b a
-
-let product f arr = arr |> Array.fold_left (fun sum item -> sum * f item) 1
+let product f arr = arr |> List.fold_left (fun sum item -> sum * f item) 1
 
 let run rounds worry_modifier =
-  let monkeys = from_file Sys.argv.(1) in
-  let divisor_product = monkeys |> product (fun m -> m.testDivisor) in
+  let monkeys = Monkey.from_file Sys.argv.(1) in
+  let divisor_product = monkeys |> product Monkey.get_divisor in
   for _ = 1 to rounds do
     simulateRound worry_modifier divisor_product monkeys
   done;
-  let inspectCounts = monkeys |> Array.map (fun x -> x.inspectCount) in
-  Array.sort compare_desc inspectCounts;
-  let a, b = (inspectCounts.(0), inspectCounts.(1)) in
+  let inspectCounts =
+    monkeys |> List.map Monkey.get_inspect_count |> List.sort compare_desc
+  in
+  let a, b = (List.nth inspectCounts 0, List.nth inspectCounts 1) in
   a * b
 
 let worry_modifier x = x / 3
 let id x = x
 let part1 () = run 20 worry_modifier
 let part2 () = run 10000 id
-let () = print_endline ("Part 1: " ^ (part1 () |> string_of_int))
-let () = print_endline ("Part 2: " ^ (part2 () |> string_of_int))
+
+let () =
+  Printf.printf "Part 1: %d\n" (part1 ());
+  Printf.printf "Part 2: %d\n" (part2 ())

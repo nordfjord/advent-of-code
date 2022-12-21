@@ -11,15 +11,14 @@
 
 (maintainers "Einar Nordfjord")
 
-(license LICENSE)
-
-(documentation https://url/to/documentation)
+(license MIT)
 
 (package
  (name 2022)
  (synopsis "A short synopsis")
  (description "A longer description")
  (depends ocaml dune)
+ (allow_empty)
  (tags
   (topics "to describe" your project)))
 
