@@ -8,6 +8,7 @@ let pairs =
         | _ -> Some (left, right)
         | exception End_of_file -> Some (left, right)
       with End_of_file -> None)
+  |> List.of_seq
 
 let rec part1_compare (a : Yojson.Safe.t) (b : Yojson.Safe.t) =
   match (a, b) with
@@ -26,7 +27,32 @@ let rec part1_compare (a : Yojson.Safe.t) (b : Yojson.Safe.t) =
 
 let () =
   pairs
-  |> Seq.mapi (fun i (left, right) ->
+  |> List.mapi (fun i (left, right) ->
          let res = part1_compare left right in
-         if res = -1 then i + 1 else 1)
-  |> Seq.fold_left ( * ) 1 |> Printf.printf "Part 1: %d"
+         if res = -1 then i + 1 else 0)
+  |> List.fold_left ( + ) 0
+  |> Printf.printf "Part 1: %d\n";
+
+  let divider_packet_1 = `List [ `List [ `Int 2 ] ] in
+  let divider_packet_2 = `List [ `List [ `Int 6 ] ] in
+
+  let divider_packets : Yojson.Safe.t list =
+    [ divider_packet_1; divider_packet_2 ]
+  in
+
+  let sorted =
+    pairs
+    |> List.concat_map (fun (left, right) -> [ left; right ])
+    |> List.append divider_packets
+    |> List.sort part1_compare
+  in
+
+  sorted |> List.iter (fun x -> print_endline (Yojson.Safe.pretty_to_string x));
+  sorted |> List.to_seq
+  |> Seq.fold_lefti
+       (fun state i value ->
+         if value = divider_packet_1 || value = divider_packet_2 then
+           state * (i + 1)
+         else state)
+       1
+  |> Printf.printf "Part 2: %d\n"
