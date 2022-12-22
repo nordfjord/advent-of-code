@@ -1,0 +1,7 @@
+(executable
+ (name solution)
+ (libraries ocamlgraph))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
