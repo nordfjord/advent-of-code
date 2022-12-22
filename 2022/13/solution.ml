@@ -25,15 +25,8 @@ let rec part1_compare (a : Yojson.Safe.t) (b : Yojson.Safe.t) =
   | _ -> failwith "WTF"
 
 let () =
-  (* pairs
-     |> Seq.iter (fun (a, b) -> print_endline (
-       Yojson.Safe.pretty_to_string a
-       ^ ", " ^ Yojson.Safe.pretty_to_string b ^ "\n"
-     )); *)
   pairs
-  |> Seq.iteri (fun i (left, right) ->
+  |> Seq.mapi (fun i (left, right) ->
          let res = part1_compare left right in
-         Printf.printf "%s\n%s\nPair %d: %s\n"
-           (Yojson.Safe.pretty_to_string left)
-           (Yojson.Safe.pretty_to_string right)
-           (i + 1) (if res = -1 then "In the right order" else "Not in the right order"))
+         if res = -1 then i + 1 else 1)
+  |> Seq.fold_left ( * ) 1 |> Printf.printf "Part 1: %d"
