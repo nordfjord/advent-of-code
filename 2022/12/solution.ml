@@ -26,14 +26,14 @@ let nodes =
   Array.init rows (fun i -> Array.init cols (new_node i))
 
 let node i j = nodes.(i).(j) (* shortcut for easier access *)
-
 let char_at i j = lines.(i).[j]
 
 let elevation i j =
-  match char_at i j with
-  | 'S' ->  Char.code 'a'
-  | 'E' -> Char.code 'z' 
-  | c -> Char.code c
+  (match char_at i j with
+  | 'S' -> Char.code 'a'
+  | 'E' -> Char.code 'z'
+  | c -> Char.code c)
+  - Char.code 'a'
 
 let traversable src dest = dest - src <= 1
 let starting = ref (0, 0)
@@ -48,12 +48,8 @@ let () =
       let h = elevation i j in
       let n = node i j in
       G.Mark.set n h;
-      if char_at i j = 'S' then (
-        Printf.printf "Starting point found\n";
-        starting := (i, j));
-      if char_at i j = 'E' then (
-        Printf.printf "Ending point found\n";
-        ending := (i, j));
+      if char_at i j = 'S' then starting := (i, j);
+      if char_at i j = 'E' then ending := (i, j);
       (* Look up *)
       if i > 0 && traversable h (elevation (i - 1) j) then
         G.add_edge g n (node (i - 1) j);
@@ -89,4 +85,22 @@ let () =
   let end_node = node end_i end_j in
   Printf.printf "\n\n%d,%d -> %d,%d\n" start_i start_j end_i end_j;
   let path, _weight = P.shortest_path g start_node end_node in
-  Printf.printf "Part 1: %d\n" (List.length path)
+  Printf.printf "Part 1: %d\n" (List.length path);
+
+  let nodes_to_check = ref [] in
+
+  for i = 0 to rows - 1 do
+    for j = 0 to cols - 1 do
+      if elevation i j = 0 then
+        nodes_to_check := node i j :: !nodes_to_check
+    done
+  done;
+
+  !nodes_to_check
+  |> List.filter_map (fun n -> 
+      try Some (P.shortest_path g n end_node |> fst |> List.length) 
+      with Not_found -> None
+  )
+  |> List.sort compare
+  |> List.hd
+  |> Printf.printf "Part 2: %d\n"
