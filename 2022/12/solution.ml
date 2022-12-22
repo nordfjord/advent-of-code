@@ -1,4 +1,3 @@
-open Format
 open Graph
 
 module G = Imperative.Digraph.Abstract (struct
@@ -25,11 +24,12 @@ let nodes =
   in
   Array.init rows (fun i -> Array.init cols (new_node i))
 
-let node i j = nodes.(i).(j) (* shortcut for easier access *)
-let char_at i j = lines.(i).[j]
+(* shortcuts for easier access *)
+let node row col = nodes.(row).(col)
+let char_at row col = lines.(row).[col]
 
-let elevation i j =
-  (match char_at i j with
+let elevation row col =
+  (match char_at row col with
   | 'S' -> Char.code 'a'
   | 'E' -> Char.code 'z'
   | c -> Char.code c)
@@ -39,32 +39,31 @@ let traversable src dest = dest - src <= 1
 let starting = ref (0, 0)
 let ending = ref (0, 0)
 
-(* We add the edges:
-   two nodes are connected whenever they can't have the same value,
-   i.e. they belong to the same line, the same column or the same 3x3 group *)
+(* Add the edges:
+    two nodes are connected when the height difference is <= 1 *)
 let () =
-  for i = 0 to rows - 1 do
-    for j = 0 to cols - 1 do
-      let h = elevation i j in
-      let n = node i j in
-      G.Mark.set n h;
-      if char_at i j = 'S' then starting := (i, j);
-      if char_at i j = 'E' then ending := (i, j);
+  for row = 0 to rows - 1 do
+    for col = 0 to cols - 1 do
+      let h = elevation row col in
+      let n = node row col in
+      if char_at row col = 'S' then starting := (row, col);
+      if char_at row col = 'E' then ending := (row, col);
       (* Look up *)
-      if i > 0 && traversable h (elevation (i - 1) j) then
-        G.add_edge g n (node (i - 1) j);
+      if row > 0 && traversable h (elevation (row - 1) col) then
+        G.add_edge g n (node (row - 1) col);
       (* Look down *)
-      if i < rows - 1 && traversable h (elevation (i + 1) j) then
-        G.add_edge g n (node (i + 1) j);
+      if row < rows - 1 && traversable h (elevation (row + 1) col) then
+        G.add_edge g n (node (row + 1) col);
       (* Look left *)
-      if j > 0 && traversable h (elevation i (j - 1)) then
-        G.add_edge g n (node i (j - 1));
+      if col > 0 && traversable h (elevation row (col - 1)) then
+        G.add_edge g n (node row (col - 1));
       (* Look right *)
-      if j < cols - 1 && traversable h (elevation i (j + 1)) then
-        G.add_edge g n (node i (j + 1))
+      if col < cols - 1 && traversable h (elevation row (col + 1)) then
+        G.add_edge g n (node row (col + 1))
     done
   done
 
+(* It's an unweighted graph *)
 module W = struct
   type edge = G.E.t
   type t = int
@@ -72,7 +71,6 @@ module W = struct
   let weight _ = 1
   let zero = 0
   let add = ( + )
-  let sub = ( - )
   let compare = compare
 end
 
@@ -83,24 +81,23 @@ let () =
   let end_i, end_j = !ending in
   let start_node = node start_i start_j in
   let end_node = node end_i end_j in
-  Printf.printf "\n\n%d,%d -> %d,%d\n" start_i start_j end_i end_j;
-  let path, _weight = P.shortest_path g start_node end_node in
-  Printf.printf "Part 1: %d\n" (List.length path);
+
+  P.shortest_path g start_node end_node
+  |> fst |> List.length
+  |> Printf.printf "Part 1: %d\n";
 
   let nodes_to_check = ref [] in
 
   for i = 0 to rows - 1 do
     for j = 0 to cols - 1 do
-      if elevation i j = 0 then
-        nodes_to_check := node i j :: !nodes_to_check
+      if elevation i j = 0 then nodes_to_check := node i j :: !nodes_to_check
     done
   done;
 
   !nodes_to_check
-  |> List.filter_map (fun n -> 
-      try Some (P.shortest_path g n end_node |> fst |> List.length) 
-      with Not_found -> None
-  )
-  |> List.sort compare
-  |> List.hd
+  |> List.filter_map (fun n ->
+         match P.shortest_path g n end_node with
+         | path, _ -> Some (List.length path)
+         | exception Not_found -> None)
+  |> List.sort compare |> List.hd
   |> Printf.printf "Part 2: %d\n"
