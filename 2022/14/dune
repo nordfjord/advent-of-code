@@ -1,0 +1,7 @@
+(executable
+ (name solution)
+ (libraries str))
+
+(env
+  (dev
+    (flags (:standard -warn-error -A))))
