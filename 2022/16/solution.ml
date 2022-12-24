@@ -12,7 +12,6 @@ module G = Imperative.Graph.Abstract (struct
 end)
 
 let g = G.create ()
-let () = printf "Starting...\n%!"
 
 let valves =
   lines
@@ -72,21 +71,20 @@ let shortest_paths =
   printf "Shortest paths prepared\n%!";
   tbl
 
-let rec part1_solution max opened pressure time (node, distance) =
+let valve_by_name name = Hashtbl.find tbl name
+
+let rec part1_solution max unvisited path pressure time (node, distance) =
   let next_time = time - (distance + 1) in
   let next_pressure = pressure + (node.flow_rate * next_time) in
-  let next_opened = node.name :: opened in
+  let next_path = node.name :: path in
   let next_nodes =
-    valves
-    |> List.filter_map (fun v ->
-           if
-             v.name <> node.name && v.flow_rate > 0
-             && not (List.mem v.name opened)
-           then
+    unvisited
+    |> List.filter_map (fun name ->
+           if not (List.mem name next_path) then
              let shortest_path =
-               Hashtbl.find shortest_paths (node.name, v.name)
+               Hashtbl.find shortest_paths (node.name, name)
              in
-             Some (v, shortest_path)
+             Some (valve_by_name name, shortest_path)
            else None)
   in
 
@@ -95,110 +93,93 @@ let rec part1_solution max opened pressure time (node, distance) =
     if !max < next_pressure then max := next_pressure)
   else
     List.iter
-      (part1_solution max next_opened next_pressure next_time)
+      (fun (node, dist) ->
+        let next_unvisited =
+          unvisited |> List.filter (fun v -> v <> node.name)
+        in
+        part1_solution max next_unvisited next_path next_pressure next_time
+          (node, dist))
       next_nodes
 
-let rec pairs list =
-  match list with
-  | [] -> []
-  | head :: tail ->
-      ((head, head) :: List.map (fun x -> (head, x)) tail) @ pairs tail
+let openable_valves =
+  valves |> List.filter (fun v -> v.flow_rate > 0) |> List.map (fun v -> v.name)
 
-let add_to_open v opened = if List.mem v opened then opened else v :: opened
+let part1 () =
+  printf "Starting part 1\n%!";
+  let starting_node = Hashtbl.find tbl "AA" in
+  let unvisited = openable_valves in
+  let max = ref 0 in
+  let () = part1_solution max unvisited [] 0 30 (starting_node, -1) in
+
+  printf "Part 1: %d\n%!" !max
+
+module StrSet = Set.Make (String)
+
+let rec combinations k list =
+  if k <= 0 then [ [] ]
+  else
+    match list with
+    | [] -> []
+    | h :: tl ->
+        let with_h = List.map (fun l -> h :: l) (combinations (k - 1) tl) in
+        let without_h = combinations k tl in
+        with_h @ without_h
 
 module T = Domainslib.Task
 
-module LockfreeMaxInt = struct
-  let rec update atom v =
-    let current = Atomic.get atom in
-    if current < v then
-      if Atomic.compare_and_set atom current v then ()
-      else (
-        Domain.cpu_relax ();
-        update atom v)
-end
+let rec update_max max new_value =
+  let current = Atomic.get max in
+  if new_value > current then
+    if Atomic.compare_and_set max current new_value then
+      printf "Maximum=%d\n" new_value
+    else (
+      Domain.cpu_relax ();
+      update_max max new_value)
 
-let rec part2_solution pool max opened pressure time (distance1, distance2)
-    (node1, node2) =
-  if time = 0 || (distance1 < 0 && distance2 < 0) then (
-    let m = Atomic.get max in
-    if m < pressure then (
-      LockfreeMaxInt.update max pressure;
-      printf "Finshed. max=%d; Opened=%s\n%!" pressure
-        (opened |> String.concat ",")))
-  else
-    let possible_next_nodes =
-      valves
-      |> List.filter (fun v ->
-             v.flow_rate > 0 && v.name <> node1.name && v.name <> node2.name
-             && not (List.mem v.name opened))
-    in
-
-    let opened = ref opened in
-    let next_distances = ref [] in
-    let next_nodes = ref [] in
-    let next_pressure = ref pressure in
-    if distance1 = 0 || distance2 = 0 then (
-      if distance1 = 0 && not (List.mem node1.name !opened) then (
-        next_pressure := !next_pressure + (node1.flow_rate * time);
-        next_nodes := possible_next_nodes |> List.map (fun n -> (n, node2));
-        next_distances :=
-          possible_next_nodes
-          |> List.map (fun n ->
-                 ( Hashtbl.find shortest_paths (node1.name, n.name),
-                   distance2 - 1 ));
-        opened := add_to_open node1.name !opened);
-      if distance2 = 0 && not (List.mem node2.name !opened) then (
-        next_pressure := !next_pressure + (node2.flow_rate * time);
-        next_nodes := possible_next_nodes |> List.map (fun n -> (node1, n));
-        next_distances :=
-          possible_next_nodes
-          |> List.map (fun n ->
-                 ( distance1 - 1,
-                   Hashtbl.find shortest_paths (node2.name, n.name) ));
-        opened := add_to_open node2.name !opened);
-      if distance1 = 0 && distance2 = 0 && List.length possible_next_nodes > 0
-      then (
-        next_nodes := possible_next_nodes |> pairs;
-        next_distances :=
-          !next_nodes
-          |> List.map (fun (new1, new2) ->
-                 ( Hashtbl.find shortest_paths (node1.name, new1.name),
-                   Hashtbl.find shortest_paths (node2.name, new2.name) ))));
-
-    let time = time - 1 in
-    if List.length !next_nodes = 0 then
-      part2_solution pool max !opened !next_pressure time
-        (distance1 - 1, distance2 - 1)
-        (node1, node2)
-    else
-      let next_nodes = !next_nodes |> List.to_seq in
-      let distances = !next_distances |> List.to_seq in
-      Seq.zip next_nodes distances
-      |> Seq.map (fun (node, distance) ->
-             T.async pool (fun _ ->
-                 part2_solution pool max !opened !next_pressure time distance
-                   node))
-      |> Seq.iter (T.await pool)
-
-let part1 () =
-  printf "Starting part 1\n";
+let part2_solution () =
   let starting_node = Hashtbl.find tbl "AA" in
-  let max = ref 0 in
-  let () = part1_solution max [] 0 30 (starting_node, -1) in
-
-  printf "Part 1: %d\n" !max
+  let valve_count = openable_valves |> List.length in
+  let maximum_pressure = Atomic.make 0 in
+  printf "%d Valves to check\n" valve_count;
+  let valve_set = StrSet.of_list openable_valves in
+  let pool = T.setup_pool ~num_domains:12 () in
+  T.run pool (fun _ ->
+      Seq.ints 0
+      |> Seq.take (valve_count / 2)  (* The assumption is that we only need to check half the paths because it'll be mirrored if we go beyond half *)
+      |> List.of_seq
+      |> List.map (fun i ->
+             T.async pool (fun _ ->
+                 printf "Starting computation for %d\n" i;
+                 combinations i openable_valves
+                 |> List.map (fun unvisited ->
+                        T.async pool (fun _ ->
+                            let others =
+                              StrSet.of_list unvisited |> StrSet.diff valve_set
+                              |> StrSet.to_seq |> List.of_seq
+                            in
+                            let find_best unvisited =
+                              T.async pool (fun _ ->
+                                  let best = ref 0 in
+                                  part1_solution best unvisited [] 0 26
+                                    (starting_node, -1);
+                                  !best)
+                            in
+                            let best1 = find_best unvisited in
+                            let best2 = find_best others in
+                            let pressure =
+                              T.await pool best1 + T.await pool best2
+                            in
+                            update_max maximum_pressure pressure))
+                 |> List.iter (T.await pool)))
+      |> List.iter (T.await pool));
+  T.teardown_pool pool;
+  Atomic.get maximum_pressure
 
 let part2 () =
   printf "Starting part 2\n";
-  let starting_node = Hashtbl.find tbl "AA" in
-  let max = Atomic.make 0 in
-  let pool = T.setup_pool ~num_domains:14 () in
-  T.run pool (fun _ ->
-      part2_solution pool max [] 0 26 (0, 0) (starting_node, starting_node));
-  T.teardown_pool pool;
-  printf "Part 2: %d\n" (Atomic.get max)
+  let max = part2_solution () in
+  printf "Part 2: %d\n" max
 
-let () = 
+let () =
   part1 ();
   part2 ()
