@@ -1,6 +1,6 @@
 (executable
  (name solution)
- (libraries str ocamlgraph))
+ (libraries str ocamlgraph domainslib))
 
 (env
   (dev
