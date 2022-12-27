@@ -43,37 +43,75 @@ let rec calc action =
       | _ -> failwith "WTF")
 
 let part1 () = calc (Hashtbl.find tbl "root") |> printf "Part 1: %d\n"
+let () = part1 ()
 
-let rec binary_search cmp f x lo hi =
-  if lo > hi then raise Not_found
-  else
-    let mid = (lo + hi) / 2 in
-    let value = f mid in
-    if value = x then mid
-    else if cmp value x then binary_search cmp f x (mid + 1) hi
-    else binary_search cmp f x lo (mid - 1)
+type expr =
+  | Add of expr * expr
+  | Sub of expr * expr
+  | Mult of expr * expr
+  | Div of expr * expr
+  | Const of int
+  | X
 
-let part2 () =
-  let human_expr, monkeys_expr =
+let rec make_tree name =
+  let node = Hashtbl.find tbl name in
+  match node with
+  | Yell _ when name = "humn" -> X
+  | Yell n -> Const n
+  | Math (n1, n2, op) -> (
+      match op with
+      | "+" -> Add (make_tree n1, make_tree n2)
+      | "-" -> Sub (make_tree n1, make_tree n2)
+      | "*" -> Mult (make_tree n1, make_tree n2)
+      | "/" -> Div (make_tree n1, make_tree n2)
+      | _ -> failwith "WTF")
+
+let rec eval expr =
+  match expr with
+  | Const n -> n
+  | X -> raise Not_found
+  | Add (a, b) -> eval a + eval b
+  | Sub (a, b) -> eval a - eval b
+  | Mult (a, b) -> eval a * eval b
+  | Div (a, b) -> eval a / eval b
+
+(* Recursively go through the tree, evaluating the parts we can
+   each evaluation applies its inverse to the target such
+   that by the time we get to the X expression the remainder is
+   the solution *)
+let rec solve expr target =
+  match expr with
+  | Const n -> n
+  | Add (a, b) -> (
+      match eval a with
+      | n -> solve b (target - n)
+      | exception Not_found -> solve a (target - eval b))
+  | Sub (a, b) -> (
+      match eval a with
+      | n -> solve b (n - target)
+      | exception Not_found -> solve a (eval b + target))
+  | Mult (a, b) -> (
+      match eval a with
+      | n -> solve b (target / n)
+      | exception Not_found -> solve a (target / eval b))
+  | Div (a, b) -> (
+      match eval a with
+      | n -> solve b (n / target)
+      | exception Not_found -> solve a (target * eval b))
+  | X -> target
+
+let part2_smart () =
+  let expr1, expr2 =
     match Hashtbl.find tbl "root" with
-    | Math (n1, n2, _) -> (Hashtbl.find tbl n1, Hashtbl.find tbl n2)
+    | Math (n1, n2, _) -> (make_tree n1, make_tree n2)
     | Yell _ -> failwith "WTF"
   in
-  let solution = calc monkeys_expr in
-
-  let calc x =
-    Hashtbl.replace tbl "humn" (Yell x);
-    calc human_expr
+  let target, formula =
+    match eval expr1 with
+    | target -> (target, expr2)
+    | exception Not_found -> (eval expr2, expr1)
   in
 
-  let max_range = 1_000_000_000_000_000 in
-  let min_range = 0 in
+  printf "Part 2 (smart): %d\n" (solve formula target)
 
-  let cmp = if calc 0 < calc 10000 then ( < ) else ( > ) in
-
-  let x = binary_search cmp calc solution min_range max_range in
-  printf "Part 2: %d\n" x
-
-let () =
-  part1 ();
-  part2 ()
+let () = part2_smart ()
