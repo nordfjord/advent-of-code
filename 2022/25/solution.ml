@@ -33,36 +33,31 @@ let snafu_to_int str =
   done;
   !result
 
-
 let int_to_snafu n =
-    let rec loop s = function
+  let rec loop s = function
     | 0 -> s
     | n ->
-        let r = ((n + 2) mod 5) in
+        let r = (n + 2) mod 5 in
         let d = (n + 2) / 5 in
         loop (int_to_snafu_char r ^ s) d
-    in
-    loop "" n
-
+  in
+  loop "" n
 
 let int_to_snafu value =
   let result = ref value in
   let s = ref "" in
   while !result <> 0 do
-    s := int_to_snafu_char (((!result + 2) mod 5 )- 2) ^ !s;
+    s := int_to_snafu_char (((!result + 2) mod 5) - 2) ^ !s;
     result := (!result - (((!result + 2) mod 5) - 2)) / 5
-  done;!s
-
-
-
+  done;
+  !s
 
 let () =
   printf "Sanity checks\n";
-  ["1121-1110-1=0"]
-    |> List.iter (fun s ->
-
-  printf "%s = %d = %s\n" s (snafu_to_int s) (int_to_snafu (snafu_to_int s))
-        )
+  [ "1121-1110-1=0" ]
+  |> List.iter (fun s ->
+         printf "%s = %d = %s\n" s (snafu_to_int s)
+           (int_to_snafu (snafu_to_int s)))
 
 let lines =
   Seq.of_dispenser (fun _ ->
