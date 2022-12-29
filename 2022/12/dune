@@ -1,6 +1,5 @@
 (executable
- (name solution)
- (libraries ocamlgraph))
+ (name solution))
 
 (env
   (dev
