@@ -129,10 +129,6 @@ let potential_production state =
   let upper = bots + state.minutes_left in
   state.resources.geode + ((upper - bots) * (upper + bots) / 2)
 
-let can_produce_geode_robot_per_minute bp state =
-  bp.geode_cost.ore <= state.robots.ore
-  && bp.geode_cost.obsidian <= state.robots.obsidian
-
 let tick_until_can_perform bp state action =
   let state = ref state in
   while (not (can_perform bp !state action)) && !state.minutes_left > 1 do
@@ -160,12 +156,7 @@ let next_states bp state =
 let rec simulate (blueprint : blueprint) max_geodes state =
   max_geodes := max !max_geodes state.resources.geode;
   if state.minutes_left = 0 then ()
-    (* Prune branches of the DFS
-       We don't want to have more ore capacity than needed to build a geode bot every minute *)
-    (* If we can build a geode robot then that's the only thing that makes sense to build *)
   else if potential_production state <= !max_geodes then ()
-  else if can_produce_geode_robot_per_minute blueprint state then
-    simulate blueprint max_geodes (evolve blueprint state BuildGeodeRobot)
   else next_states blueprint state |> List.iter (simulate blueprint max_geodes)
 
 let part1 () =
@@ -190,4 +181,4 @@ let part2 () =
 let () =
   part1 ();
   part2 ();
-  printf "Runtime: %fms\n" (1000. *. Sys.time () -. t)
+  printf "Runtime: %fms\n" ((1000. *. Sys.time ()) -. t)
