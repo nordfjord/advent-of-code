@@ -1,5 +1,7 @@
 open Printf
 
+let t = Sys.time ()
+
 module Ore = struct
   type t = { ore : int; clay : int; obsidian : int; geode : int }
   [@@deriving show]
@@ -74,13 +76,7 @@ type state = { robots : Ore.t; resources : Ore.t; minutes_left : int }
 [@@deriving show]
 
 let actions =
-  [
-    BuildOreRobot;
-    BuildClayRobot;
-    BuildObsidianRobot;
-    BuildGeodeRobot;
-    DoNothing;
-  ]
+  [ BuildOreRobot; BuildClayRobot; BuildObsidianRobot; BuildGeodeRobot ]
 
 let can_perform (bp : blueprint) state action =
   match action with
@@ -97,14 +93,15 @@ let initial =
     minutes_left = 24;
   }
 
+let tick state =
+  {
+    state with
+    resources = Ore.concat state.resources state.robots;
+    minutes_left = state.minutes_left - 1;
+  }
+
 let evolve (blueprint : blueprint) state action =
-  let state =
-    {
-      state with
-      resources = Ore.concat state.resources state.robots;
-      minutes_left = state.minutes_left - 1;
-    }
-  in
+  let state = tick state in
 
   match action with
   | DoNothing -> state
@@ -141,6 +138,8 @@ module T = Domainslib.Task
 
    necessary for that *)
 
+let is_legal_state state = Ore.gt state.resources Ore.empty
+
 let potential_production state =
   let bots = state.robots.geode in
   let upper = bots + state.minutes_left in
@@ -150,69 +149,61 @@ let can_produce_geode_robot_per_minute bp state =
   bp.geode_cost.ore <= state.robots.ore
   && bp.geode_cost.obsidian <= state.robots.obsidian
 
+let tick_until_can_perform bp state action =
+  let state = ref state in
+  while (not (can_perform bp !state action)) && !state.minutes_left > 1 do
+    state := tick !state
+  done;
+  evolve bp !state action
+
+let next_states bp state =
+  let next_actions =
+    actions
+    |> List.filter_map (fun action ->
+           if action = BuildOreRobot && state.robots.ore >= bp.max_ore then None
+             (* We don't want more clay than necessary *)
+           else if action = BuildClayRobot && state.robots.clay >= bp.max_clay
+           then None (* We don't want more obsidian than necessary *)
+           else if
+             action = BuildObsidianRobot
+             && state.robots.obsidian >= bp.max_obsidian
+           then None
+           else tick_until_can_perform bp state action |> Option.some)
+  in
+  match next_actions with [] -> [ tick state ] | actions -> actions
+
 (* Modified DFS *)
-let rec simulate (blueprint : blueprint) state max_geodes action =
-  if state.minutes_left = 0 then
-    max_geodes := max !max_geodes state.resources.geode
+let rec simulate (blueprint : blueprint) max_geodes state =
+  max_geodes := max !max_geodes state.resources.geode;
+  if state.minutes_left = 0 then ()
     (* Prune branches of the DFS
        We don't want to have more ore capacity than needed to build a geode bot every minute *)
-  else if action = BuildOreRobot && state.robots.ore >= blueprint.max_ore then
-    () (* We don't want more clay than necessary *)
-  else if action = BuildClayRobot && state.robots.clay >= blueprint.max_clay
-  then () (* We don't want more obsidian than necessary *)
-  else if
-    action = BuildObsidianRobot
-    && state.robots.obsidian >= blueprint.max_obsidian
-  then ()
-    (* This branch doesn't have a hope in hell of outperforming the best we've found *)
-  else if potential_production state <= !max_geodes then ()
     (* If we can build a geode robot then that's the only thing that makes sense to build *)
-  else
-    let next_state = evolve blueprint state action in
-    actions
-    |> List.filter (can_perform blueprint next_state)
-    |> List.iter (simulate blueprint next_state max_geodes)
+  else if potential_production state <= !max_geodes then ()
+  else if can_produce_geode_robot_per_minute blueprint state then
+    simulate blueprint max_geodes (evolve blueprint state BuildGeodeRobot)
+  else next_states blueprint state |> List.iter (simulate blueprint max_geodes)
 
-let part1 pool =
-  T.async pool (fun _ ->
-      blueprints
-      |> List.map (fun bp ->
-             T.async pool (fun _ ->
-                 printf "Blueprint %d\n" bp.id;
-                 let max_geodes = ref 0 in
-                 actions
-                 |> List.filter (can_perform bp initial)
-                 |> List.iter (simulate bp initial max_geodes);
-                 printf "blueprint=%d; result=%d quality_level=%d\n%!" bp.id
-                   !max_geodes (bp.id * !max_geodes);
-                 (bp, !max_geodes)))
-      |> List.map (T.await pool)
-      |> List.fold_left (fun sum (bp, max) -> sum + (bp.id * max)) 0
-      |> printf "Part 1: %d\n")
+let part1 () =
+  blueprints
+  |> List.map (fun bp ->
+         let max_geodes = ref 0 in
+         simulate bp max_geodes initial;
+         (bp, !max_geodes))
+  |> List.fold_left (fun sum (bp, max) -> sum + (bp.id * max)) 0
+  |> printf "Part 1: %d\n%!"
 
-let part2 pool =
-  T.async pool (fun _ ->
-      blueprints |> List.to_seq |> Seq.take 3 |> List.of_seq
-      |> List.map (fun bp ->
-             T.async pool (fun _ ->
-                 printf "Blueprint %d\n" bp.id;
-                 let max_geodes = ref 0 in
-                 let state = { initial with minutes_left = 32 } in
-                 actions
-                 |> List.filter (can_perform bp state)
-                 |> List.iter (simulate bp state max_geodes);
-                 printf "blueprint=%d; result=%d quality_level=%d\n%!" bp.id
-                   !max_geodes (bp.id * !max_geodes);
-                 !max_geodes))
-      |> List.map (T.await pool)
-      |> List.fold_left (fun sum max -> sum * max) 1
-      |> printf "Part 2: %d\n")
+let part2 () =
+  blueprints |> List.to_seq |> Seq.take 3 |> List.of_seq
+  |> List.map (fun bp ->
+         let max_geodes = ref 0 in
+         let state = { initial with minutes_left = 32 } in
+         simulate bp max_geodes state;
+         !max_geodes)
+  |> List.fold_left (fun sum max -> sum * max) 1
+  |> printf "Part 2: %d\n"
 
 let () =
-  let pool = T.setup_pool ~num_domains:8 () in
-  T.run pool (fun _ ->
-      let p1 = part1 pool in
-      let p2 = part2 pool in
-      T.await pool p1;
-      T.await pool p2);
-  T.teardown_pool pool
+  part1 ();
+  part2 ();
+  printf "Runtime: %f\n" (Sys.time () -. t)
