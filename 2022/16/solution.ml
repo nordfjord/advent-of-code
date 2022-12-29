@@ -4,9 +4,9 @@ let t = Sys.time ()
 
 let lines =
   Seq.of_dispenser (fun () ->
-      match read_line () with x -> Some x | exception End_of_file -> None)
+      match read_line () with x -> Some x | exception End_of_file -> None )
 
-type valve = { name : string; flow_rate : int; paths : string list }
+type valve = {name: string; flow_rate: int; paths: string list}
 
 let valves =
   lines
@@ -14,7 +14,7 @@ let valves =
          Scanf.sscanf line "Valve %s has flow rate=%d; %_s %_s to %_s %s@$"
            (fun name flow_rate valves ->
              let paths = valves |> Str.split (Str.regexp_string ", ") in
-             { name; flow_rate; paths }))
+             {name; flow_rate; paths} ) )
   |> Array.of_seq
 
 let shortest_paths =
@@ -26,7 +26,7 @@ let shortest_paths =
             else
               let node = valves.(i) in
               let name = valves.(j).name in
-              if List.mem name node.paths then 1 else 100000))
+              if List.mem name node.paths then 1 else 100000 ) )
   in
   for k = 0 to len - 1 do
     for i = 0 to len - 1 do
@@ -35,7 +35,7 @@ let shortest_paths =
           dist.(i).(j) <- dist.(i).(k) + dist.(k).(j)
       done
     done
-  done;
+  done ;
   dist
 
 let valve_by_name i = valves.(i)
@@ -51,7 +51,6 @@ let rec dfs max_pressure unvisited pressure time (i, distance) =
     |> Seq.map (fun j -> (j, shortest_paths.(i).(j)))
     |> List.of_seq
   in
-
   if next_time < 0 then max_pressure := max !max_pressure pressure
   else if List.length next_nodes = 0 then
     max_pressure := max !max_pressure next_pressure
@@ -59,7 +58,7 @@ let rec dfs max_pressure unvisited pressure time (i, distance) =
     List.iter
       (fun (node, dist) ->
         let next_unvisited = unvisited |> IntSet.remove node in
-        dfs max_pressure next_unvisited next_pressure next_time (node, dist))
+        dfs max_pressure next_unvisited next_pressure next_time (node, dist) )
       next_nodes
 
 let openable_valves =
@@ -75,15 +74,15 @@ let starting_node =
 let () =
   let unvisited = IntSet.of_list openable_valves in
   let max = ref 0 in
-  dfs max unvisited 0 30 (starting_node, -1);
-
+  dfs max unvisited 0 30 (starting_node, -1) ;
   printf "Part 1: %d\n" !max
 
 let rec combinations k list =
   if k <= 0 then Seq.return IntSet.empty
   else
     match list with
-    | [] -> Seq.return IntSet.empty
+    | [] ->
+        Seq.return IntSet.empty
     | h :: tl ->
         let with_h = Seq.map (IntSet.add h) (combinations (k - 1) tl) in
         let without_h = combinations k tl in
@@ -96,16 +95,13 @@ let () =
     if Hashtbl.mem best unvisited then ()
     else
       let pressure = ref 0 in
-      dfs pressure unvisited 0 26 (starting_node, -1);
+      dfs pressure unvisited 0 26 (starting_node, -1) ;
       Hashtbl.add best unvisited !pressure
   in
-
   (* The assumption is that we only need to check half the paths because it'll be mirrored if we go beyond half *)
-  combinations ((valve_count / 2) - 1) openable_valves |> Seq.iter find_best;
-  printf "Found %d solutions\n" (Hashtbl.length best);
-
+  combinations ((valve_count / 2) - 1) openable_valves |> Seq.iter find_best ;
+  printf "Found %d solutions\n" (Hashtbl.length best) ;
   let arr = Array.of_seq (Hashtbl.to_seq best) in
-
   arr
   |> Array.fold_left
        (fun max_pressure (left_valves, left_pressure) ->
@@ -117,9 +113,8 @@ let () =
                   pressure > max_pressure
                   && IntSet.disjoint left_valves right_valves
                 then pressure
-                else max_pressure)
-              max_pressure)
+                else max_pressure )
+              max_pressure )
        0
-  |> printf "Part 2: %d\n";
-
+  |> printf "Part 2: %d\n" ;
   printf "\nRunning time %f\n" (Sys.time () -. t)

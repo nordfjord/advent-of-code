@@ -2,7 +2,7 @@ open Printf
 
 let cubes =
   Seq.of_dispenser (fun () ->
-      match read_line () with s -> Some s | exception End_of_file -> None)
+      match read_line () with s -> Some s | exception End_of_file -> None )
   |> Seq.map (fun s -> Scanf.sscanf s "%d,%d,%d" (fun x y z -> (x, y, z)))
   |> Array.of_seq
 
@@ -22,14 +22,12 @@ let is_lava (x, y, z) =
   if is_in_bounds (x, y, z) then points.(x).(y).(z) = Lava else false
 
 let adjacent (x, y, z) =
-  [
-    (x - 1, y, z);
-    (x + 1, y, z);
-    (x, y - 1, z);
-    (x, y + 1, z);
-    (x, y, z - 1);
-    (x, y, z + 1);
-  ]
+  [ (x - 1, y, z)
+  ; (x + 1, y, z)
+  ; (x, y - 1, z)
+  ; (x, y + 1, z)
+  ; (x, y, z - 1)
+  ; (x, y, z + 1) ]
 
 let count_empty_sides cubes =
   (* a cube has 6 sides *)
@@ -39,7 +37,7 @@ let count_empty_sides cubes =
          let covered_sides =
            adjacent point |> List.filter is_lava |> List.length
          in
-         sides + (6 - covered_sides))
+         sides + (6 - covered_sides) )
        0
 
 let part1 () = printf "Part 1: %d\n%!" (count_empty_sides cubes)
@@ -74,7 +72,8 @@ end)
 
 let rec expand_airpocket_aux to_visit visited =
   match to_visit with
-  | [] -> visited
+  | [] ->
+      visited
   | point :: to_visit ->
       (* we're outside the lava drop, exit early *)
       if not (is_in_bounds point) then PointSet.empty
@@ -88,7 +87,7 @@ let rec expand_airpocket_aux to_visit visited =
           (List.append (adjacent point) to_visit)
           (PointSet.add point visited)
 
-let expand_airpocket point = expand_airpocket_aux [ point ] PointSet.empty
+let expand_airpocket point = expand_airpocket_aux [point] PointSet.empty
 
 let find_air_pockets () =
   let air_pockets = ref PointSet.empty in
@@ -103,15 +102,13 @@ let find_air_pockets () =
             PointSet.union !air_pockets (expand_airpocket (x, y, z))
       done
     done
-  done;
+  done ;
   !air_pockets
 
 let part2 () =
   let pockets = find_air_pockets () |> PointSet.to_seq |> Array.of_seq in
   (* If we fill in the air pockets with lava then the part 1 solution works again *)
-  pockets |> Array.iter (fun (x, y, z) -> points.(x).(y).(z) <- Lava);
+  pockets |> Array.iter (fun (x, y, z) -> points.(x).(y).(z) <- Lava) ;
   printf "Part 2: %d\n" (count_empty_sides (Array.append cubes pockets))
 
-let () =
-  part1 ();
-  part2 ()
+let () = part1 () ; part2 ()

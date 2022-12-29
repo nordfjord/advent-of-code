@@ -1,9 +1,10 @@
 (executable
  (name solution)
  (libraries str)
- (preprocess (pps ppx_deriving.show ppx_deriving.ord))
-)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.ord)))
 
 (env
-  (dev
-    (flags (:standard -warn-error -A))))
+ (dev
+  (flags
+   (:standard -warn-error -A))))
