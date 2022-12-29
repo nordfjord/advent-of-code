@@ -4,7 +4,6 @@ let t = Sys.time ()
 
 module Ore = struct
   type t = { ore : int; clay : int; obsidian : int; geode : int }
-  [@@deriving show]
 
   let concat a b =
     {
@@ -65,15 +64,12 @@ let blueprints =
   |> Seq.map parse_blueprint |> List.of_seq
 
 type action =
-  | DoNothing
   | BuildOreRobot
   | BuildClayRobot
   | BuildObsidianRobot
   | BuildGeodeRobot
-[@@deriving show]
 
 type state = { robots : Ore.t; resources : Ore.t; minutes_left : int }
-[@@deriving show]
 
 let actions =
   [ BuildOreRobot; BuildClayRobot; BuildObsidianRobot; BuildGeodeRobot ]
@@ -84,7 +80,6 @@ let can_perform (bp : blueprint) state action =
   | BuildClayRobot -> Ore.gt state.resources bp.clay_cost
   | BuildObsidianRobot -> Ore.gt state.resources bp.obsidian_cost
   | BuildGeodeRobot -> Ore.gt state.resources bp.geode_cost
-  | DoNothing -> true
 
 let initial =
   {
@@ -104,7 +99,6 @@ let evolve (blueprint : blueprint) state action =
   let state = tick state in
 
   match action with
-  | DoNothing -> state
   | BuildOreRobot ->
       {
         state with
@@ -129,16 +123,6 @@ let evolve (blueprint : blueprint) state action =
         resources = Ore.sub state.resources blueprint.geode_cost;
         robots = { state.robots with geode = state.robots.geode + 1 };
       }
-
-module T = Domainslib.Task
-
-(* This task is about figuring out the most geode we can get with a blueprint
-
-   One way to solve this is to find the "shortest path" to a geode robot and repeat the actions
-
-   necessary for that *)
-
-let is_legal_state state = Ore.gt state.resources Ore.empty
 
 let potential_production state =
   let bots = state.robots.geode in
@@ -206,4 +190,4 @@ let part2 () =
 let () =
   part1 ();
   part2 ();
-  printf "Runtime: %f\n" (Sys.time () -. t)
+  printf "Runtime: %fms\n" (1000. *. Sys.time () -. t)
