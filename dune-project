@@ -1,6 +1,6 @@
 (lang dune 3.6)
 
-(name 2022)
+(name advent-of-code)
 
 (generate_opam_files true)
 
@@ -14,7 +14,7 @@
 (license MIT)
 
 (package
- (name 2022)
+ (name advent-of-code)
  (synopsis "A short synopsis")
  (description "A longer description")
  (depends ocaml dune)

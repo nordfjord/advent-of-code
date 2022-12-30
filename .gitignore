@@ -4,3 +4,5 @@ node_modules/
 **/*/Main
 **/*/node_modules/
 .log/
+
+**/_build/
