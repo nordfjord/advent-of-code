@@ -1,8 +1,5 @@
 (executable
- (name solution)
- (libraries domainslib ocamlgraph)
- (preprocess
-  (pps ppx_deriving.show ppx_deriving.ord)))
+ (name solution))
 
 (env
  (dev

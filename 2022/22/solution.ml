@@ -4,7 +4,7 @@ type block = Air | Floor | Wall
 
 type move = Move of int | RotateRight | RotateLeft
 
-type heading = Up | Down | Left | Right [@@deriving show]
+type heading = Up | Down | Left | Right
 
 let int_of_heading = function Right -> 0 | Down -> 1 | Left -> 2 | Up -> 3
 
@@ -134,15 +134,13 @@ let () =
          (starting_position, Right)
   in
   printf "\n" ;
-  printf "row=%d; col=%d; heading=%s\n" row col (show_heading heading) ;
+  printf "row=%d; col=%d; heading=%d\n" row col (int_of_heading heading) ;
   printf "Part 1: %d\n" (score row col heading)
 
 (* Part two is different enough from part 1 that a lot of the functions have been reimplemented
    OCaml allows shadowing so it's absolutely fine *)
 
 (* In this part we treat the players position as a 4-tuple of face, row, col, direction *)
-
-type position = int * int * int * heading
 
 let move (face, row, col, dir) =
   match dir with
@@ -278,6 +276,6 @@ let () =
          (0, 0, 0, Right)
   in
   printf "\n" ;
-  printf "face=%d; row=%d; col=%d; heading=%s\n" face row col
-    (show_heading heading) ;
+  printf "face=%d; row=%d; col=%d; heading=%d\n" face row col
+    (int_of_heading heading) ;
   printf "Part 2: %d\n" (score face row col heading)

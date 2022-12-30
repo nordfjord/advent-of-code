@@ -47,17 +47,6 @@ let snafu_to_int str =
   done ;
   !result
 
-let int_to_snafu n =
-  let rec loop s = function
-    | 0 ->
-        s
-    | n ->
-        let r = (n + 2) mod 5 in
-        let d = (n + 2) / 5 in
-        loop (int_to_snafu_char r ^ s) d
-  in
-  loop "" n
-
 let int_to_snafu value =
   let result = ref value in
   let s = ref "" in
@@ -74,7 +63,7 @@ let () =
          printf "%s = %d = %s\n" s (snafu_to_int s)
            (int_to_snafu (snafu_to_int s)) )
 
-let lines =
+let () =
   Seq.of_dispenser (fun _ ->
       match read_line () with x -> Some x | exception End_of_file -> None )
   |> Seq.map snafu_to_int |> Seq.fold_left ( + ) 0 |> int_to_snafu

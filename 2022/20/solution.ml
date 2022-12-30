@@ -26,8 +26,6 @@ let insert_at arr i value =
   let right = Array.sub arr i (len - i) in
   Array.concat [left; [|value|]; right]
 
-type x = (int * int) array [@@deriving show]
-
 let switch arr i item =
   let removed = remove_at arr i in
   let l = Array.length removed - 1 in
