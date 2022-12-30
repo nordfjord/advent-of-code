@@ -1,1 +1,6 @@
-profile = ocamlformat
+profile = ocamlformat 
+let-binding-spacing = compact
+dock-collection-brackets = false 
+break-separators=before
+sequence-style=before
+break-cases=fit-or-vertical
