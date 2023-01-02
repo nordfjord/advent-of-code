@@ -39,35 +39,39 @@ let rec run program ip =
   let op = parse_op program ip in
   match op with
   | Add (a, b, dst) ->
-      program.(dst) <- a + b
-      ; run program (ip + 4)
+    program.(dst) <- a + b;
+    run program (ip + 4)
   | Mul (a, b, dst) ->
-      program.(dst) <- a * b
-      ; run program (ip + 4)
+    program.(dst) <- a * b;
+    run program (ip + 4)
   | Store dst ->
-      InputRequested
-        (fun inp ->
-          program.(dst) <- inp
-          ; run program (ip + 2) )
+    InputRequested
+      (fun inp ->
+        program.(dst) <- inp;
+        run program (ip + 2))
   | Output value -> Out (value, fun () -> run program (ip + 2))
   | JmpIfTrue (a, b) ->
-      let ip = if a <> 0 then b else ip + 3 in
-      run program ip
+    let ip = if a <> 0 then b else ip + 3 in
+    run program ip
   | JmpIfFalse (a, b) ->
-      let ip = if a = 0 then b else ip + 3 in
-      run program ip
+    let ip = if a = 0 then b else ip + 3 in
+    run program ip
   | LessThan (a, b, dst) ->
-      program.(dst) <- (if a < b then 1 else 0)
-      ; run program (ip + 4)
+    program.(dst) <- (if a < b then 1 else 0);
+    run program (ip + 4)
   | Equals (a, b, dst) ->
-      program.(dst) <- (if a = b then 1 else 0)
-      ; run program (ip + 4)
+    program.(dst) <- (if a = b then 1 else 0);
+    run program (ip + 4)
   | Halt -> Halted
 
 let get_program init =
   let program =
-    Prelude.Aoc.stdin_seq () |> List.of_seq |> List.hd
-    |> String.split_on_char ',' |> List.map int_of_string |> Array.of_list
+    Prelude.Aoc.stdin_seq ()
+    |> List.of_seq
+    |> List.hd
+    |> String.split_on_char ','
+    |> List.map int_of_string
+    |> Array.of_list
   in
   match run program 0 with
   | InputRequested f -> f init
@@ -87,28 +91,30 @@ let part1 () =
       for c = 0 to 4 do
         for d = 0 to 4 do
           for e = 0 to 4 do
-            if [a; b; c; d; e] |> List.sort_uniq compare |> List.length = 5 then
+            if [ a; b; c; d; e ] |> List.sort_uniq compare |> List.length = 5
+            then (
               let output =
-                [a; b; c; d; e] |> List.map get_program
+                [ a; b; c; d; e ]
+                |> List.map get_program
                 |> List.fold_left
                      (fun out program ->
                        match program with
-                       | InputRequested f -> (
-                         match f out with
-                         | Out (value, _) -> value
-                         | Halted -> out
-                         | _ -> failwith "unexpected program behaviour" )
+                       | InputRequested f ->
+                         (match f out with
+                          | Out (value, _) -> value
+                          | Halted -> out
+                          | _ -> failwith "unexpected program behaviour")
                        | Out (value, _) -> value
-                       | Halted -> out )
+                       | Halted -> out)
                      0
               in
-              result := max !result output
+              result := max !result output)
           done
         done
       done
     done
-  done
-  ; !result |> printf "Part 1: %d\n"
+  done;
+  !result |> printf "Part 1: %d\n"
 
 let () = part1 ()
 
@@ -120,8 +126,8 @@ let rec run_until_output cell p =
   match p with
   | InputRequested f -> run_until_output cell (f !cell)
   | Out (value, p) ->
-      cell := value
-      ; p ()
+    cell := value;
+    p ()
   | Halted -> Halted
 
 let part2 () =
@@ -131,18 +137,19 @@ let part2 () =
       for c = 5 to 9 do
         for d = 5 to 9 do
           for e = 5 to 9 do
-            if [a; b; c; d; e] |> List.sort_uniq compare |> List.length = 5 then (
+            if [ a; b; c; d; e ] |> List.sort_uniq compare |> List.length = 5
+            then (
               let output = ref 0 in
-              let programs = ref ([a; b; c; d; e] |> List.map get_program) in
+              let programs = ref ([ a; b; c; d; e ] |> List.map get_program) in
               while !programs |> List.for_all (fun s -> s <> Halted) do
                 programs := !programs |> List.map (run_until_output output)
-              done
-              ; result := max !result !output )
+              done;
+              result := max !result !output)
           done
         done
       done
     done
-  done
-  ; !result |> printf "Part 2: %d\n"
+  done;
+  !result |> printf "Part 2: %d\n"
 
 let () = part2 ()

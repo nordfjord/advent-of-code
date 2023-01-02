@@ -20,7 +20,7 @@ let costs =
          let cost =
            left
            |> Str.split (Str.regexp_string ", ")
-           |> List.map (fun s -> Scanf.sscanf s "%d %s" (fun amount t -> t, amount))
+           |> List.map (fun s -> Scanf.sscanf s "%d %s" (fun amount t -> (t, amount)))
          in
          { name = t; amount; cost }))
   |> List.of_seq
@@ -30,7 +30,7 @@ let () = costs |> List.iter (fun n -> Hashtbl.add tbl n.name n)
 
 let merge =
   StrMap.merge (fun _ a b ->
-    match a, b with
+    match (a, b) with
     | Some a, Some b -> if a + b = 0 then None else Some (a + b)
     | Some 0, None -> None
     | None, Some 0 -> None

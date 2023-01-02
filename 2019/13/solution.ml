@@ -75,43 +75,43 @@ let rec run comp =
   let op = parse_op comp in
   match op with
   | Add (a, b, dst) ->
-    set comp dst (a + b)
-    ; comp.ip <- comp.ip + 4
-    ; run comp
+    set comp dst (a + b);
+    comp.ip <- comp.ip + 4;
+    run comp
   | Mul (a, b, dst) ->
-    set comp dst (a * b)
-    ; comp.ip <- comp.ip + 4
-    ; run comp
+    set comp dst (a * b);
+    comp.ip <- comp.ip + 4;
+    run comp
   | Store dst ->
     InputRequested
       (fun inp ->
-        set comp dst inp
-        ; comp.ip <- comp.ip + 2
-        ; run comp)
+        set comp dst inp;
+        comp.ip <- comp.ip + 2;
+        run comp)
   | Output value ->
     Out
       ( value
       , fun () ->
-          comp.ip <- comp.ip + 2
-          ; run comp )
+          comp.ip <- comp.ip + 2;
+          run comp )
   | JmpIfTrue (a, b) ->
-    comp.ip <- (if a <> 0 then b else comp.ip + 3)
-    ; run comp
+    comp.ip <- (if a <> 0 then b else comp.ip + 3);
+    run comp
   | JmpIfFalse (a, b) ->
-    comp.ip <- (if a = 0 then b else comp.ip + 3)
-    ; run comp
+    comp.ip <- (if a = 0 then b else comp.ip + 3);
+    run comp
   | LessThan (a, b, dst) ->
-    set comp dst (if a < b then 1 else 0)
-    ; comp.ip <- comp.ip + 4
-    ; run comp
+    set comp dst (if a < b then 1 else 0);
+    comp.ip <- comp.ip + 4;
+    run comp
   | Equals (a, b, dst) ->
-    set comp dst (if a = b then 1 else 0)
-    ; comp.ip <- comp.ip + 4
-    ; run comp
+    set comp dst (if a = b then 1 else 0);
+    comp.ip <- comp.ip + 4;
+    run comp
   | SetRelativeBase base ->
-    comp.relative_base <- comp.relative_base + base
-    ; comp.ip <- comp.ip + 2
-    ; run comp
+    comp.relative_base <- comp.relative_base + base;
+    comp.ip <- comp.ip + 2;
+    run comp
   | Halt -> Halted
 
 let input = read_line ()
@@ -123,8 +123,8 @@ let get_computer () =
   let mem = Hashtbl.create (Array.length program) in
   for i = 0 to Array.length program - 1 do
     Hashtbl.add mem i program.(i)
-  done
-  ; { mem; ip = 0; relative_base = 0 }
+  done;
+  { mem; ip = 0; relative_base = 0 }
 
 let get_program () = run (get_computer ())
 
@@ -137,8 +137,8 @@ let instr_seq program input =
        | None -> failwith "Input expected"
        | Some i -> get_next (f i))
     | Out (value, next) ->
-      p := next ()
-      ; Some value
+      p := next ();
+      Some value
   in
   Seq.of_dispenser (fun () -> get_next !p)
 
@@ -148,7 +148,7 @@ let rec chunk size (seq : 'a Seq.t) () =
   | Seq.Cons (x, xs) -> Seq.Cons (Seq.cons x (Seq.take (size - 1) xs), chunk size seq)
 
 let parse_instr = function
-  | [ x; y; tile ] -> x, y, tile
+  | [ x; y; tile ] -> (x, y, tile)
   | _ -> failwith "Unexpected"
 
 let part1 () =
@@ -157,12 +157,12 @@ let part1 () =
   |> chunk 3
   |> Seq.map List.of_seq
   |> Seq.map parse_instr
-  |> Seq.iter (fun (x, y, tile) -> Hashtbl.replace floor (x, y) tile)
-  ; floor
-    |> Hashtbl.to_seq
-    |> Seq.filter (fun (_, t) -> t = 2)
-    |> Seq.length
-    |> printf "Part 1: %d\n"
+  |> Seq.iter (fun (x, y, tile) -> Hashtbl.replace floor (x, y) tile);
+  floor
+  |> Hashtbl.to_seq
+  |> Seq.filter (fun (_, t) -> t = 2)
+  |> Seq.length
+  |> printf "Part 1: %d\n"
 
 let print tbl =
   for i = 0 to 26 do
@@ -174,50 +174,50 @@ let print tbl =
       | Some 3 -> print_char '_'
       | Some 4 -> print_char 'o'
       | None | Some _ -> print_char ' '
-    done
-    ; print_char '\n'
+    done;
+    print_char '\n'
   done
 
 let part2 () =
   let floor = Hashtbl.create 300 in
   let computer = get_computer () in
-  Hashtbl.replace computer.mem 0 2
-  ; let score = ref 0 in
-    let ball_and_paddle_location () =
-      Hashtbl.to_seq floor
-      |> Seq.filter (fun (_, tile) -> tile = 4 || tile = 3)
-      |> List.of_seq
-      |> function
-      | [ a; b ] ->
-        (match a, b with
-         | ((ax, _), 4), ((bx, _), 3) -> ax, bx
-         | ((ax, _), 3), ((bx, _), 4) -> bx, ax
-         | _ -> raise Not_found)
-      | _ -> raise Not_found
-    in
-    let program = run computer in
-    let inputs =
-      Seq.ints 0
-      |> Seq.map (fun _ ->
-           let ball_x, player_x = ball_and_paddle_location () in
-           print_string "\027[2J"
-           ; print floor
-           ; printf "Score: %d\n%!" !score
-           ; compare ball_x player_x)
-      |> Seq.to_dispenser
-    in
-    instr_seq program inputs
-    |> chunk 3
-    |> Seq.map List.of_seq
-    |> Seq.map parse_instr
-    |> Seq.iter (fun (x, y, tile) ->
-         match x, y with
-         | -1, 0 -> score := tile
-         | _ -> Hashtbl.replace floor (x, y) tile)
-    ; print_string "\027[2J"
-    ; print floor
-    ; printf "Score: %d\n%!" !score
+  Hashtbl.replace computer.mem 0 2;
+  let score = ref 0 in
+  let ball_and_paddle_location () =
+    Hashtbl.to_seq floor
+    |> Seq.filter (fun (_, tile) -> tile = 4 || tile = 3)
+    |> List.of_seq
+    |> function
+    | [ a; b ] ->
+      (match (a, b) with
+       | ((ax, _), 4), ((bx, _), 3) -> (ax, bx)
+       | ((ax, _), 3), ((bx, _), 4) -> (bx, ax)
+       | _ -> raise Not_found)
+    | _ -> raise Not_found
+  in
+  let program = run computer in
+  let inputs =
+    Seq.ints 0
+    |> Seq.map (fun _ ->
+         let ball_x, player_x = ball_and_paddle_location () in
+         print_string "\027[2J";
+         print floor;
+         printf "Score: %d\n%!" !score;
+         compare ball_x player_x)
+    |> Seq.to_dispenser
+  in
+  instr_seq program inputs
+  |> chunk 3
+  |> Seq.map List.of_seq
+  |> Seq.map parse_instr
+  |> Seq.iter (fun (x, y, tile) ->
+       match (x, y) with
+       | -1, 0 -> score := tile
+       | _ -> Hashtbl.replace floor (x, y) tile);
+  print_string "\027[2J";
+  print floor;
+  printf "Score: %d\n%!" !score
 
 let () =
-  part1 ()
-  ; part2 ()
+  part1 ();
+  part2 ()

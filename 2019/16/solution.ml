@@ -28,14 +28,14 @@ let fft offset arr =
        % 10)
 
 let () =
-  printf "Part 1: "
-  ; Seq.ints 0
-    |> Seq.take 100
-    |> Seq.fold_left (fun inp _ -> fft 0 inp) input
-    |> Array.to_seq
-    |> Seq.take 8
-    |> Seq.iter (fun x -> printf "%d" x)
-  ; printf "\n"
+  printf "Part 1: ";
+  Seq.ints 0
+  |> Seq.take 100
+  |> Seq.fold_left (fun inp _ -> fft 0 inp) input
+  |> Array.to_seq
+  |> Seq.take 8
+  |> Seq.iter (fun x -> printf "%d" x);
+  printf "\n"
 
 (* Relies on the fact that the offset is always in the back half of the list *)
 let phase_backwards_sum digits =
@@ -44,7 +44,7 @@ let phase_backwards_sum digits =
   |> List.fold_left
        (fun (new_list, partial_sum) digit ->
          let new_sum = partial_sum + digit in
-         (new_sum mod 10) :: new_list, new_sum)
+         ((new_sum mod 10) :: new_list, new_sum))
        ([], 0)
   |> fst
 
@@ -54,20 +54,20 @@ let solve digits =
   |> Seq.fold_left (fun state _ -> phase_backwards_sum state) digits
 
 let () =
-  printf "Part 2: \n"
-  ; let offset =
-      Array.to_seq input
-      |> Seq.take 7
-      |> Seq.fold_left (fun sum digit -> (10 * sum) + digit) 0
-    in
-    printf "offset=%d\n" offset
-    ; let input =
-        Array.to_seq input
-        |> Seq.cycle
-        |> Seq.take (Array.length input * 10000)
-        |> Seq.drop offset
-        |> List.of_seq
-      in
-      printf "Inp length: %d\n" (List.length input)
-      ; solve input |> List.to_seq |> Seq.take 8 |> Seq.iter (fun x -> printf "%d" x)
-      ; printf "\n"
+  printf "Part 2: \n";
+  let offset =
+    Array.to_seq input
+    |> Seq.take 7
+    |> Seq.fold_left (fun sum digit -> (10 * sum) + digit) 0
+  in
+  printf "offset=%d\n" offset;
+  let input =
+    Array.to_seq input
+    |> Seq.cycle
+    |> Seq.take (Array.length input * 10000)
+    |> Seq.drop offset
+    |> List.of_seq
+  in
+  printf "Inp length: %d\n" (List.length input);
+  solve input |> List.to_seq |> Seq.take 8 |> Seq.iter (fun x -> printf "%d" x);
+  printf "\n"

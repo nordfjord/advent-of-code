@@ -1,6 +1,6 @@
 profile = janestreet 
 let-binding-spacing = compact
-dock-collection-brackets = false 
-break-separators=before
-sequence-style=before
+dock-collection-brackets = false
+sequence-style=terminator
 break-cases=fit-or-vertical
+parens-tuple=always

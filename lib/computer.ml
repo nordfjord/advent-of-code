@@ -1,5 +1,3 @@
-open Printf
-
 type operation =
   | Add of int * int * int
   | Mul of int * int * int
@@ -114,9 +112,7 @@ let rec run comp =
     run comp
   | Halt -> Halted
 
-let input = read_line ()
-
-let get_program () =
+let get_computer input =
   let program =
     input |> String.split_on_char ',' |> List.map int_of_string |> Array.of_list
   in
@@ -124,19 +120,6 @@ let get_program () =
   for i = 0 to Array.length program - 1 do
     Hashtbl.add mem i program.(i)
   done;
-  run { mem; ip = 0; relative_base = 0 }
+  { mem; ip = 0; relative_base = 0 }
 
-let rec run_program input output p =
-  match p with
-  | InputRequested f -> run_program input output (f input)
-  | Out (value, p) ->
-    output value;
-    run_program input output (p ())
-  | Halted -> ()
-
-let part1 () = run_program 1 (printf "Part 1: %d\n") (get_program ())
-let part2 () = run_program 2 (printf "Part 2: %d\n") (get_program ())
-
-let () =
-  part1 ();
-  part2 ()
+let get_program input = run (get_computer input)

@@ -42,14 +42,15 @@ let part2 () =
            |> List.sort_uniq compare
            |> List.length ))
     |> Seq.fold_left
-         (fun (p, seen) (point, value) -> if value > seen then point, value else p, seen)
+         (fun (p, seen) (point, value) ->
+           if value > seen then (point, value) else (p, seen))
          ((0, 0), 0)
   in
   let point =
     points
     |> Array.to_seq
     |> Seq.filter (( <> ) starting_point)
-    |> Seq.map (fun p -> p, Point.angle starting_point p)
+    |> Seq.map (fun p -> (p, Point.angle starting_point p))
     |> List.of_seq
     |> List.sort (fun a b ->
          let a = snd a in
@@ -66,5 +67,5 @@ let part2 () =
   point |> Seq.map score |> Seq.iter (printf "Part 2: %d\n")
 
 let () =
-  part1 ()
-  ; part2 ()
+  part1 ();
+  part2 ()
