@@ -40,11 +40,6 @@ let transformations =
   ]
 
 let rec parse_line_2 (firstNumber, lastNumber) str =
-  Printf.printf
-    "%d %d %s\n"
-    (Option.value ~default:0 firstNumber)
-    (Option.value ~default:0 lastNumber)
-    str;
   if String.length str = 0
   then (
     match (firstNumber, lastNumber) with
