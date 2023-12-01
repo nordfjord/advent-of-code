@@ -12,7 +12,7 @@ let parse_line str =
     |> Seq.map (fun c -> Char.code c - Char.code '0')
     |> Array.of_seq
   in
-  if Array.length chars < 2
+  if Array.length chars = 0
   then 0
   else (
     let first = chars.(0) in
