@@ -5,7 +5,8 @@ let stdn_seq' =
        match read_line () with
        | x -> Some x
        | exception End_of_file -> None)
-    |> Array.of_seq
-    |> Array.to_seq)
+     |> Array.of_seq
+     |> Array.to_seq)
 
 let stdin_seq () = Lazy.force stdn_seq'
+

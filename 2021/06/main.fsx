@@ -17,13 +17,13 @@ let simulateDay (arr: _ array) =
     arr[7] <- arr[8]
     arr[8] <- zeroes
 
-    
+
 let rec simulate days arr =
     for i in 1..days do simulateDay arr
-    Array.sum arr 
+    Array.sum arr
 
 let input = System.Console.ReadLine() |> parseInput
 
-input |> simulate 80  |> printfn "Part1: %A"
-input |> simulate 256 |> printfn "Part2: %A"
+input |> Array.copy |> simulate 80  |> printfn "Part1: %A"
+input |> Array.copy |> simulate 256 |> printfn "Part2: %A"
 
