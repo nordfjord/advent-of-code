@@ -36,42 +36,36 @@ let transformations =
   ; ("seven", 7)
   ; ("eight", 8)
   ; ("nine", 9)
-  ; ("ten", 10)
   ]
 
-let rec parse_line_2 (firstNumber, lastNumber) str =
-  if String.length str = 0
-  then (
-    match (firstNumber, lastNumber) with
-    | Some f, Some l -> (f * 10) + l
-    | Some f, None -> (f * 10) + f
-    | None, Some _ -> failwith "Invalid input"
-    | None, None -> failwith "Invalid input")
+let rec parse_line_2 (firstNumber, lastNumber) i str =
+  if i = String.length str
+  then (firstNumber * 10) + lastNumber
   else (
-    let c = str.[0] in
-    let nextStr = String.sub str 1 (String.length str - 1) in
-    if '0' <= c && c <= '9'
-    then (
+    let c = str.[i] in
+    match c with
+    | c when '0' <= c && c <= '9' ->
       let n = Char.code c - Char.code '0' in
-      match (firstNumber, lastNumber) with
-      | None, _ -> parse_line_2 (Some n, None) nextStr
-      | Some _, _ -> parse_line_2 (firstNumber, Some n) nextStr)
-    else (
+      (match firstNumber with
+       | -1 -> parse_line_2 (n, n) (i + 1) str
+       | _ -> parse_line_2 (firstNumber, n) (i + 1) str)
+    | _ ->
+      let remaining_length = String.length str - i in
       let n =
         transformations
-        |> List.find_opt (fun (s, _) -> String.starts_with ~prefix:s str)
+        |> List.filter (fun (s, _) -> String.length s <= remaining_length)
+        |> List.find_opt (fun (s, _) -> String.sub str i (String.length s) = s)
         |> Option.map snd
       in
-      match (n, firstNumber, lastNumber) with
-      | None, _, _ -> parse_line_2 (firstNumber, lastNumber) nextStr
-      | Some n, None, _ -> parse_line_2 (Some n, None) nextStr
-      | Some n, _, _ -> parse_line_2 (firstNumber, Some n) nextStr))
+      (match n with
+       | None -> parse_line_2 (firstNumber, lastNumber) (i + 1) str
+       | Some n when firstNumber = -1 -> parse_line_2 (n, n) (i + 1) str
+       | Some n -> parse_line_2 (firstNumber, n) (i + 1) str))
 
 let part2 () =
   lines
-  |> Array.to_seq
-  |> Seq.map (parse_line_2 (None, None))
-  |> Seq.fold_left ( + ) 0
+  |> Array.map (fun l -> parse_line_2 (-1, -1) 0 l)
+  |> Array.fold_left ( + ) 0
   |> Printf.printf "Part 2: %d\n"
 
 let () =
