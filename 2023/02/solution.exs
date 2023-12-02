@@ -1,64 +1,105 @@
-defmodule Part1 do
-  def parse_line(line) do
-    # Example: "Game 11: 3 blue, 4 red; 5 green, 6 red; 2 green"
-    # Split on ":"
-    [game, rest] = String.split(line, ": ")
-    game = String.replace(game, "Game ", "") |> String.to_integer()
-
-    nums =
-      rest
-      |> String.split("; ")
-      |> Enum.map(fn x ->
-        x
-        |> String.split(", ")
-        |> Enum.map(fn x -> x |> String.split(" ") end)
-        |> Enum.reduce(%{red: 0, green: 0, blue: 0}, fn [num, color], acc ->
-          case color do
-            "red" -> %{acc | red: acc.red + String.to_integer(num)}
-            "green" -> %{acc | green: acc.green + String.to_integer(num)}
-            "blue" -> %{acc | blue: acc.blue + String.to_integer(num)}
-          end
-        end)
-      end)
-
-    {game, nums}
+defmodule Game do
+  def empty() do
+    %{red: 0, green: 0, blue: 0}
   end
+
+  def concat(a, b) do
+    %{red: a.red + b.red, green: a.green + b.green, blue: a.blue + b.blue}
+  end
+
+  def maximum(a, b) do
+    %{red: max(a.red, b.red), green: max(a.green, b.green), blue: max(a.blue, b.blue)}
+  end
+
+  def power(x), do: x.red * x.green * x.blue
+
+  def create(red, green, blue) do
+    %{red: red, green: green, blue: blue}
+  end
+
+  def lte(a, b) do
+    a.red <= b.red && a.green <= b.green && a.blue <= b.blue
+  end
+end
+
+defmodule Part1 do
+  def parse_ball(ball) do
+    [num, color] = String.split(ball, " ")
+    {String.to_integer(num), color}
+  end
+
+  defp to_colors([], acc), do: acc
+
+  defp to_colors([{num, color} | balls], acc) do
+    to_colors(
+      balls,
+      case color do
+        "red" -> Game.concat(acc, Game.create(num, 0, 0))
+        "green" -> Game.concat(acc, Game.create(0, num, 0))
+        "blue" -> Game.concat(acc, Game.create(0, 0, num))
+      end
+    )
+  end
+
+  defp to_colors(balls), do: to_colors(balls, Game.empty())
+
+  def parse_balls(balls) do
+    balls
+    |> String.split(", ")
+    |> Enum.map(&parse_ball/1)
+    |> to_colors()
+  end
+
+  def parse_games(games) do
+    games
+    |> String.split("; ")
+    |> Enum.map(&parse_balls/1)
+  end
+
+  def parse_game(game) do
+    game |> String.replace("Game ", "") |> String.to_integer()
+  end
+
+  def parse_line(line) do
+    [game, games] = String.split(line, ": ")
+    {parse_game(game), parse_games(games)}
+  end
+
+  def snd({_, x}), do: x
+  def fst({x, _}), do: x
 
   def solve(lines) do
     max = %{red: 12, green: 13, blue: 14}
 
     lines
     |> Enum.map(&parse_line/1)
-    |> Enum.filter(fn {_game, balls} ->
+    |> Enum.filter(fn balls ->
       balls
-      |> Enum.all?(fn nums ->
-        nums.red <= max.red && nums.green <= max.green && nums.blue <= max.blue
-      end)
+      |> snd()
+      |> Enum.all?(fn nums -> Game.lte(nums, max) end)
     end)
-    |> Enum.map(fn {game, _nums} ->
-      game
-    end)
+    |> Enum.map(&fst/1)
     |> Enum.sum()
   end
 end
 
 defmodule Part2 do
+  defp find_max([], maxes), do: maxes
+
+  defp find_max([nums | rest], maxes) do
+    find_max(rest, Game.maximum(maxes, nums))
+  end
+
+  def find_max(list), do: find_max(list, Game.empty())
+
+  def power(nums), do: nums.red * nums.green * nums.blue
+
   def solve(lines) do
     lines
     |> Enum.map(&Part1.parse_line/1)
-    |> Enum.map(fn {_game, shown} ->
-      maxes =
-        shown
-        |> Enum.reduce(%{red: 0, green: 0, blue: 0}, fn nums, acc ->
-          %{
-            red: max(acc.red, nums.red),
-            green: max(acc.green, nums.green),
-            blue: max(acc.blue, nums.blue)
-          }
-        end)
-
-      maxes.red * maxes.green * maxes.blue
-    end)
+    |> Enum.map(&Part1.snd/1)
+    |> Enum.map(&find_max/1)
+    |> Enum.map(&power/1)
     |> Enum.sum()
   end
 end
