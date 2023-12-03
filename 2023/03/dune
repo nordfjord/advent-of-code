@@ -1,7 +1,15 @@
 (executable
  (name solution)
  (libraries str)
- (preprocess (pps ppx_deriving.show)))
+ (preprocess (pps ppx_deriving.show))
+ (modules solution))
+
+(executable
+ (name simple)
+ (libraries str)
+ (preprocess (pps ppx_deriving.show))
+ (modules simple))
+
 
 (env
  (dev
