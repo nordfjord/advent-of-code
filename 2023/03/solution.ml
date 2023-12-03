@@ -12,6 +12,8 @@ type cell =
 
 let is_digit c = '0' <= c && c <= '9'
 let char_to_int c = int_of_char c - int_of_char '0'
+
+(* The number of digits in a number is the floor of the log10 of the number + 1 *)
 let digits n = int_of_float (log10 (float_of_int n)) + 1
 
 let parse_number i str =
