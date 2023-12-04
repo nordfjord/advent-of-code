@@ -44,11 +44,12 @@ let parse_line y str =
         let key = (i, y) in
         let num = ref 0 in
         let i' = ref i in
-        let coords = ref [] in
         while !i' < cols && is_digit str.[!i'] do
           num := (!num * 10) + char_to_int str.[!i'];
-          coords := (!i', y) :: !coords;
+          (* Add links to and from adjacent symbols *)
           adjacent (!i', y)
+          |> Seq.filter (fun (x, y) ->
+               (not (is_digit lines.(y).[x])) && lines.(y).[x] <> '.')
           |> Seq.iter (fun k ->
                add_link k key;
                add_link key k);
