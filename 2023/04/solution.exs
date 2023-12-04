@@ -14,15 +14,6 @@ defmodule Part1 do
   def solve(cards) do
     solve(cards, 0)
   end
-
-  def parse_numbers(line) do
-    line
-    |> String.trim()
-    |> String.split(" ")
-    |> Enum.map(&String.trim/1)
-    |> Enum.filter(fn x -> x != "" end)
-    |> Enum.map(&String.to_integer/1)
-  end
 end
 
 defmodule Part2 do
@@ -51,17 +42,25 @@ defmodule Part2 do
   def solve(lines), do: solve(lines, 0, Enum.count(lines), Map.new())
 end
 
+defmodule Parse do
+  def parse_numbers(line) do
+    line
+    |> String.trim()
+    |> String.split(~r/\s+/)
+    |> Enum.map(&String.to_integer/1)
+  end
+end
+
 # Read all lines from stdin
 lines =
   IO.read(:stdio, :eof)
   |> String.split("\n")
-  |> Enum.filter(fn line -> line != "" end)
   |> Enum.map(fn line ->
     [left, my_cards] = String.split(line, " | ")
     [_game_id, winning_cards] = String.split(left, ": ")
 
-    my_cards = Part1.parse_numbers(my_cards)
-    winning_cards = Part1.parse_numbers(winning_cards)
+    my_cards = Parse.parse_numbers(my_cards)
+    winning_cards = Parse.parse_numbers(winning_cards)
 
     {MapSet.new(winning_cards), MapSet.new(my_cards)}
   end)
