@@ -5,12 +5,6 @@ let lines =
     | exception End_of_file -> None)
   |> List.of_seq
 
-module IntMap = Map.Make (struct
-  type t = int
-
-  let compare = compare
-end)
-
 module IntSet = Set.Make (struct
   type t = int
 
@@ -46,31 +40,28 @@ let part1 () =
   |> Printf.printf "Part 1: %d\n"
 
 let play_part2 cards_held card_number cards =
-  let current_count = cards_held |> IntMap.find card_number in
+  let current_count = Hashtbl.find cards_held card_number in
   let score = play cards in
   Seq.ints 1
   |> Seq.take score
   |> Seq.map (fun x -> x + card_number)
-  |> Seq.filter (fun x -> IntMap.mem x cards_held)
-  |> Seq.fold_left
-       (fun acc x ->
-         let curr = IntMap.find x acc in
-         IntMap.add x (curr + current_count) acc)
-       cards_held
+  |> Seq.filter (fun x -> Hashtbl.mem cards_held x)
+  |> Seq.iter (fun x ->
+       let curr = Hashtbl.find cards_held x in
+       Hashtbl.replace cards_held x (curr + current_count))
 
-let calc_score cards = IntMap.fold (fun _ v acc -> acc + v) cards 0
+let calc_score cards = Hashtbl.fold (fun _ v acc -> acc + v) cards 0
 
 let part2 () =
   let len = List.length cards in
-  let initial =
-    Seq.ints 0 |> Seq.take len |> Seq.map (fun x -> (x, 1)) |> IntMap.of_seq
+  let cards_held =
+    Seq.ints 0 |> Seq.take len |> Seq.map (fun x -> (x, 1)) |> Hashtbl.of_seq
   in
   cards
   |> List.to_seq
   |> Seq.mapi (fun i (winning, mine) -> (i, (winning, mine)))
-  |> Seq.fold_left (fun acc (i, cards) -> play_part2 acc i cards) initial
-  |> calc_score
-  |> Printf.printf "Part 2: %d\n"
+  |> Seq.iter (fun (i, cards) -> play_part2 cards_held i cards);
+  calc_score cards_held |> Printf.printf "Part 2: %d\n"
 
 let () =
   part1 ();
