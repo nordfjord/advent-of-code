@@ -10,6 +10,11 @@
  (preprocess (pps ppx_deriving.show))
  (modules simple))
 
+(executable
+ (name graph)
+ (libraries str ocamlgraph)
+ (preprocess (pps ppx_deriving.show))
+ (modules graph))
 
 (env
  (dev
