@@ -18,27 +18,16 @@ module IntSet = Set.Make (struct
 end)
 
 let parse_card str =
-  let open Angstrom in
-  let line =
-    let integer =
-      take_while1 (function
-        | '0' .. '9' -> true
-        | _ -> false)
-      >>| int_of_string
-    in
-    let ws =
-      skip_while (function
-        | ' ' -> true
-        | _ -> false)
-    in
-    let* _ = string "Card" <* ws <* integer <* char ':' <* ws in
-    let* winning = sep_by1 ws integer <* ws <* char '|' <* ws in
-    let* mine = sep_by1 ws integer <* ws in
-    return (IntSet.of_list winning, IntSet.of_list mine)
+  let [ left; right ] = String.split_on_char '|' str in
+  let [ _; winning ] = String.split_on_char ':' left in
+  let winning =
+    Str.split (Str.regexp " +") winning |> List.map int_of_string |> IntSet.of_list
   in
-  match parse_string ~consume:All line str with
-  | Ok (winning, mine) -> (winning, mine)
-  | Error msg -> failwith msg
+  let mine =
+    Str.split (Str.regexp " +") right |> List.map int_of_string |> IntSet.of_list
+  in
+  (winning, mine)
+  [@@warning "-8"]
 
 let cards = List.map parse_card lines
 
