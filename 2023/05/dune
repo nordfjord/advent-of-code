@@ -1,0 +1,9 @@
+(executable
+ (name solution)
+ (preprocess (pps ppx_deriving.show))
+ (libraries str angstrom))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A -w -32))))
