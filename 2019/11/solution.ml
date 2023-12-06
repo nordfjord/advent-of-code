@@ -52,7 +52,7 @@ let part1 () =
 let part2 () =
   let floor = Hashtbl.create 300 in
   Hashtbl.add floor (0, 0) 1;
-  simulate floor (0, 0) (1, 0) (get_program (input));
+  simulate floor (0, 0) (1, 0) (get_program input);
   printf "Part 2:\n";
   for i = 1 downto -6 do
     for j = 0 to 40 do

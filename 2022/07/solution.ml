@@ -32,17 +32,17 @@ let prepare_fs () =
   lines ()
   |> Seq.filter_map parse_line
   |> Seq.iter (fun cmd ->
-       match cmd with
-       | ChangeDirectory s ->
-         (match s with
-          | "/" ->
-            Stack.clear directorystack;
-            Stack.push "/" directorystack
-          | ".." -> Stack.pop directorystack |> ignore
-          | s ->
-            let current = Stack.top directorystack in
-            Stack.push (current ^ s ^ "/") directorystack)
-       | File size -> directorystack |> Stack.iter (adjust filesystem (( + ) size)))
+    match cmd with
+    | ChangeDirectory s ->
+      (match s with
+       | "/" ->
+         Stack.clear directorystack;
+         Stack.push "/" directorystack
+       | ".." -> Stack.pop directorystack |> ignore
+       | s ->
+         let current = Stack.top directorystack in
+         Stack.push (current ^ s ^ "/") directorystack)
+    | File size -> directorystack |> Stack.iter (adjust filesystem (( + ) size)))
 
 let () =
   prepare_fs ();

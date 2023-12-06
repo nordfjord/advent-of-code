@@ -6,10 +6,10 @@ let lines =
   |> Array.of_seq
 
 module IntIntSet = Set.Make (struct
-  type t = int * int
+    type t = int * int
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 let cells = lines.(0) |> String.length
 let rows = Array.length lines
@@ -45,10 +45,10 @@ let solve arr =
         then
           !gears
           |> IntIntSet.iter (fun (x, y) ->
-               let current_gears =
-                 Hashtbl.find_opt gears_to_nums (x, y) |> Option.value ~default:[]
-               in
-               Hashtbl.replace gears_to_nums (x, y) (!num :: current_gears));
+            let current_gears =
+              Hashtbl.find_opt gears_to_nums (x, y) |> Option.value ~default:[]
+            in
+            Hashtbl.replace gears_to_nums (x, y) (!num :: current_gears));
         gears := IntIntSet.empty;
         num := 0;
         has_part := false

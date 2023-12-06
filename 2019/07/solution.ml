@@ -1,7 +1,7 @@
 open Printf
 open Prelude.Computer
 
-let input = read_line()
+let input = read_line ()
 
 let part1 () =
   let result = ref 0 in
@@ -14,10 +14,10 @@ let part1 () =
             then (
               let output =
                 [ a; b; c; d; e ]
-                |> List.map (fun init -> 
-                    match (get_program input) with
-                    | InputRequested f -> f init
-                    | _ -> failwith "Unexpected")
+                |> List.map (fun init ->
+                  match get_program input with
+                  | InputRequested f -> f init
+                  | _ -> failwith "Unexpected")
                 |> List.fold_left
                      (fun out program ->
                        match program with
@@ -58,10 +58,14 @@ let part2 () =
             if [ a; b; c; d; e ] |> List.sort_uniq compare |> List.length = 5
             then (
               let output = ref 0 in
-              let programs = ref ([ a; b; c; d; e ] |> List.map (fun init -> 
-                match get_program input with
-                | InputRequested f -> f init
-                | _ -> failwith "Unexpected")) in
+              let programs =
+                ref
+                  ([ a; b; c; d; e ]
+                   |> List.map (fun init ->
+                     match get_program input with
+                     | InputRequested f -> f init
+                     | _ -> failwith "Unexpected"))
+              in
               while !programs |> List.for_all (fun s -> s <> Halted) do
                 programs := !programs |> List.map (run_until_output output)
               done;

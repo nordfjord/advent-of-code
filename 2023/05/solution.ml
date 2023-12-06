@@ -89,7 +89,7 @@ module Parse = struct
       let src = (src, src + count) in
       let dst = (dst, dst + count) in
       { Mapping.src; dst } :: parse_section lines (i + 1))
-    [@@ocaml.warning "-8"]
+  [@@ocaml.warning "-8"]
 
   let rec parse_sections lines i =
     if i >= Array.length lines
@@ -99,14 +99,14 @@ module Parse = struct
     else (
       let ranges = parse_section lines (i + 1) in
       ranges :: parse_sections lines (i + 1 + List.length ranges))
-    [@@ocaml.warning "-8"]
+  [@@ocaml.warning "-8"]
 
   let parse lines =
     let [ _; seeds ] = lines.(0) |> Str.split (Str.regexp_string ": ") in
     let seeds = seeds |> String.split_on_char ' ' |> List.map int_of_string in
     let sections = parse_sections lines 2 in
     (seeds, sections)
-    [@@ocaml.warning "-8"]
+  [@@ocaml.warning "-8"]
 end
 
 let seeds, mappings = Parse.parse lines
@@ -128,7 +128,7 @@ let part2_stupid () =
   |> pairs
   |> List.to_seq
   |> Seq.concat_map (fun (start, count) ->
-       Seq.ints start |> Seq.take count |> Seq.map find_location)
+    Seq.ints start |> Seq.take count |> Seq.map find_location)
   |> Seq.fold_left min max_int
   |> Printf.printf "Part 2: %d\n"
 

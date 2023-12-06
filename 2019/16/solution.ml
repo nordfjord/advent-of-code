@@ -22,10 +22,10 @@ let create_sequence n =
 let fft offset arr =
   arr
   |> Array.mapi (fun i _ ->
-       (Seq.zip (Array.to_seq arr) (create_sequence (offset + i + 1))
-       |> Seq.map (fun (a, b) -> a * b)
-       |> Seq.fold_left ( + ) 0)
-       % 10)
+    (Seq.zip (Array.to_seq arr) (create_sequence (offset + i + 1))
+     |> Seq.map (fun (a, b) -> a * b)
+     |> Seq.fold_left ( + ) 0)
+    % 10)
 
 let () =
   printf "Part 1: ";

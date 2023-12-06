@@ -37,11 +37,11 @@ let () =
         map.(i).[j] = '#'
         && adjacent (i, j)
            |> List.for_all (fun (i, j) ->
-                0 <= i
-                && i <= Array.length map - 1
-                && 0 <= j
-                && j <= String.length map.(i) - 1
-                && map.(i).[j] = '#')
+             0 <= i
+             && i <= Array.length map - 1
+             && 0 <= j
+             && j <= String.length map.(i) - 1
+             && map.(i).[j] = '#')
       in
       if is_cross
       then (

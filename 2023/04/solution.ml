@@ -6,10 +6,10 @@ let lines =
   |> List.of_seq
 
 module IntSet = Set.Make (struct
-  type t = int
+    type t = int
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 let parse_card str =
   let [ left; right ] = String.split_on_char '|' str in
@@ -21,7 +21,7 @@ let parse_card str =
     Str.split (Str.regexp " +") right |> List.map int_of_string |> IntSet.of_list
   in
   (winning, mine)
-  [@@warning "-8"]
+[@@warning "-8"]
 
 let cards = List.map parse_card lines
 
@@ -47,8 +47,8 @@ let play_part2 cards_held card_number cards =
   |> Seq.map (fun x -> x + card_number)
   |> Seq.filter (fun x -> Hashtbl.mem cards_held x)
   |> Seq.iter (fun x ->
-       let curr = Hashtbl.find cards_held x in
-       Hashtbl.replace cards_held x (curr + current_count))
+    let curr = Hashtbl.find cards_held x in
+    Hashtbl.replace cards_held x (curr + current_count))
 
 let calc_score cards = Hashtbl.fold (fun _ v acc -> acc + v) cards 0
 

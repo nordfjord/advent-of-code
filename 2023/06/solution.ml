@@ -32,7 +32,7 @@ let parse2 lines =
   let [ _label; distances ] = lines.(1) |> Str.split (Str.regexp ": ") in
   let time = parse_number times in
   let distance = parse_number distances in
-  time, distance
+  (time, distance)
 [@@warning "-8"]
 
 let part2 () = parse2 lines |> solve |> Printf.printf "Part 2: %d\n"

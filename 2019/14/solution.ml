@@ -16,13 +16,13 @@ module StrMap = Map.Make (String)
 let costs =
   Aoc.stdin_seq ()
   |> Seq.map (fun s ->
-       Scanf.sscanf s "%s@=> %d %s" (fun left amount t ->
-         let cost =
-           left
-           |> Str.split (Str.regexp_string ", ")
-           |> List.map (fun s -> Scanf.sscanf s "%d %s" (fun amount t -> (t, amount)))
-         in
-         { name = t; amount; cost }))
+    Scanf.sscanf s "%s@=> %d %s" (fun left amount t ->
+      let cost =
+        left
+        |> Str.split (Str.regexp_string ", ")
+        |> List.map (fun s -> Scanf.sscanf s "%d %s" (fun amount t -> (t, amount)))
+      in
+      { name = t; amount; cost }))
   |> List.of_seq
 
 let tbl = Hashtbl.create 300

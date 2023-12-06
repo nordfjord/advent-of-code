@@ -63,9 +63,9 @@ let adjacent (x, y) =
 let has_adjacent_symbol (x, y) =
   adjacent (x, y)
   |> List.exists (fun (x, y) ->
-       match Hashtbl.find_opt grid (x, y) with
-       | Some (Symbol _) -> true
-       | _ -> false)
+    match Hashtbl.find_opt grid (x, y) with
+    | Some (Symbol _) -> true
+    | _ -> false)
 
 let number_cells (x, y) n =
   let cell_length = digits n in
@@ -78,9 +78,9 @@ let part1 () =
   grid
   |> Hashtbl.to_seq
   |> Seq.filter_map (fun ((x, y), cell) ->
-       match cell with
-       | Number n when number_has_adjacent_symbol (x, y) n -> Some n
-       | _ -> None)
+    match cell with
+    | Number n when number_has_adjacent_symbol (x, y) n -> Some n
+    | _ -> None)
   |> Seq.fold_left ( + ) 0
   |> Printf.printf "Part 1: %d\n"
 
@@ -90,18 +90,18 @@ let numbers_lookup =
   grid
   |> Hashtbl.to_seq
   |> Seq.filter_map (fun ((x, y), cell) ->
-       match cell with
-       | Number n ->
-         Some (number_cells (x, y) n |> Seq.map (fun (x', y') -> ((x', y'), (x, y))))
-       | _ -> None)
+    match cell with
+    | Number n ->
+      Some (number_cells (x, y) n |> Seq.map (fun (x', y') -> ((x', y'), (x, y))))
+    | _ -> None)
   |> Seq.concat
   |> Hashtbl.of_seq
 
 module IntIntSet = Set.Make (struct
-  type t = int * int
+    type t = int * int
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 let adjacent_numbers (x, y) =
   let adjacent_cells = adjacent (x, y) in
@@ -112,9 +112,9 @@ let adjacent_numbers (x, y) =
     |> IntIntSet.of_list
     |> IntIntSet.to_seq
     |> Seq.filter_map (fun (x, y) ->
-         match Hashtbl.find grid (x, y) with
-         | Number n -> Some n
-         | _ -> None)
+      match Hashtbl.find grid (x, y) with
+      | Number n -> Some n
+      | _ -> None)
     |> List.of_seq
   in
   (* Only gears with exactly two adjacent numbers are valid *)
@@ -126,12 +126,12 @@ let part2 () =
   grid
   |> Hashtbl.to_seq
   |> Seq.filter_map (fun ((x, y), cell) ->
-       match cell with
-       | Symbol '*' ->
-         (match adjacent_numbers (x, y) with
-          | Some (a, b) -> Some (a * b)
-          | None -> None)
-       | _ -> None)
+    match cell with
+    | Symbol '*' ->
+      (match adjacent_numbers (x, y) with
+       | Some (a, b) -> Some (a * b)
+       | None -> None)
+    | _ -> None)
   |> Seq.fold_left ( + ) 0
   |> Printf.printf "Part 2: %d\n"
 

@@ -14,11 +14,11 @@ let layers =
   Seq.ints 0
   |> Seq.take_while (fun i -> (i * width) + width <= String.length input)
   |> Seq.map (fun i ->
-       let value = String.sub input (i * width) width in
-       value
-       |> String.to_seq
-       |> Seq.map (fun c -> Char.code c - Char.code '0')
-       |> Array.of_seq)
+    let value = String.sub input (i * width) width in
+    value
+    |> String.to_seq
+    |> Seq.map (fun c -> Char.code c - Char.code '0')
+    |> Array.of_seq)
   |> Array.of_seq
   |> chunk 6
 
@@ -26,16 +26,16 @@ let count_digits layers =
   layers
   |> Array.to_seq
   |> Seq.map (fun layer ->
-       Array.to_seq layer
-       |> Seq.concat_map Array.to_seq
-       |> Seq.fold_left
-            (fun (x, y, z) value ->
-              match value with
-              | 0 -> (x + 1, y, z)
-              | 1 -> (x, y + 1, z)
-              | 2 -> (x, y, z + 1)
-              | _ -> (x, y, z))
-            (0, 0, 0))
+    Array.to_seq layer
+    |> Seq.concat_map Array.to_seq
+    |> Seq.fold_left
+         (fun (x, y, z) value ->
+           match value with
+           | 0 -> (x + 1, y, z)
+           | 1 -> (x, y + 1, z)
+           | 2 -> (x, y, z + 1)
+           | _ -> (x, y, z))
+         (0, 0, 0))
 
 let score (_, y, z) = y * z
 
@@ -67,11 +67,11 @@ let part2 () =
        (fun back front ->
          back
          |> Array.mapi (fun i xs ->
-              xs
-              |> Array.mapi (fun j x ->
-                   match (x, front.(i).(j)) with
-                   | x, 2 -> x
-                   | _, x -> x)))
+           xs
+           |> Array.mapi (fun j x ->
+             match (x, front.(i).(j)) with
+             | x, 2 -> x
+             | _, x -> x)))
        (Array.init 6 (fun _ -> Array.make 25 2))
   |> print_image
 

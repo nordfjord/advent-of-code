@@ -54,10 +54,10 @@ let get_tile m t = Hashtbl.find_opt m t |> Option.value ~default:Unknown
 let possible_moves map loc =
   [ 1; 2; 3; 4 ]
   |> List.filter (fun l ->
-       let l = Point.(loc + direction_vector l) in
-       match get_tile map l with
-       | Unknown | OxygenSystem | Floor -> true
-       | _ -> false)
+    let l = Point.(loc + direction_vector l) in
+    match get_tile map l with
+    | Unknown | OxygenSystem | Floor -> true
+    | _ -> false)
 
 let path_to_location path =
   path |> List.fold_left (fun loc d -> Point.(loc + direction_vector d)) (0, 0)
@@ -76,22 +76,22 @@ let bfs map =
     else
       [ 1; 2; 3; 4 ]
       |> List.iter (fun d ->
-           let robot = robot (get_program input) in
-           path |> List.iter (fun d -> robot d |> ignore);
-           let result = robot d in
-           let loc = Point.(location + direction_vector d) in
-           if Hashtbl.mem map loc
-           then ()
-           else (
-             match result with
-             | 0 -> Hashtbl.replace map loc Wall
-             | 1 ->
-               Hashtbl.replace map loc Floor;
-               Queue.add (path @ [ d ]) q
-             | 2 ->
-               Hashtbl.replace map loc OxygenSystem;
-               Queue.add (path @ [ d ]) q
-             | _ -> failwith "Unexpected output"))
+        let robot = robot (get_program input) in
+        path |> List.iter (fun d -> robot d |> ignore);
+        let result = robot d in
+        let loc = Point.(location + direction_vector d) in
+        if Hashtbl.mem map loc
+        then ()
+        else (
+          match result with
+          | 0 -> Hashtbl.replace map loc Wall
+          | 1 ->
+            Hashtbl.replace map loc Floor;
+            Queue.add (path @ [ d ]) q
+          | 2 ->
+            Hashtbl.replace map loc OxygenSystem;
+            Queue.add (path @ [ d ]) q
+          | _ -> failwith "Unexpected output"))
   done;
   !result
 
@@ -123,15 +123,15 @@ let bfs map start =
     result := max minutes !result;
     [ up; down; left; right ]
     |> List.iter (fun d ->
-         let loc = Point.(location + d) in
-         if Hashtbl.mem visited loc
-         then ()
-         else (
-           match get_tile map loc with
-           | Wall | Unknown -> ()
-           | Floor | OxygenSystem ->
-             Hashtbl.add visited loc ();
-             Queue.add (loc, minutes + 1) q))
+      let loc = Point.(location + d) in
+      if Hashtbl.mem visited loc
+      then ()
+      else (
+        match get_tile map loc with
+        | Wall | Unknown -> ()
+        | Floor | OxygenSystem ->
+          Hashtbl.add visited loc ();
+          Queue.add (loc, minutes + 1) q))
   done;
   !result
 

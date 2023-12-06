@@ -18,14 +18,14 @@ let gravity_3d (x1, y1, z1) (x2, y2, z2) = (gravity x1 x2, gravity y1 y2, gravit
 let simulate positions =
   positions
   |> List.map (fun p ->
-       let pos, vel = p in
-       let new_vel =
-         positions
-         |> List.filter (( <> ) p)
-         |> List.map fst
-         |> List.fold_left (fun vel other -> add vel (gravity_3d pos other)) vel
-       in
-       (pos, new_vel))
+    let pos, vel = p in
+    let new_vel =
+      positions
+      |> List.filter (( <> ) p)
+      |> List.map fst
+      |> List.fold_left (fun vel other -> add vel (gravity_3d pos other)) vel
+    in
+    (pos, new_vel))
   |> List.map (fun (p, v) -> (add p v, v))
 
 let score l =

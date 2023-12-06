@@ -3,10 +3,10 @@ type node =
   | Symbol of char
 
 module IntIntSet = Set.Make (struct
-  type t = int * int
+    type t = int * int
 
-  let compare = compare
-end)
+    let compare = compare
+  end)
 
 let lines =
   Seq.of_dispenser (fun _ ->
@@ -49,10 +49,10 @@ let parse_line y str =
           (* Add links to and from adjacent symbols *)
           adjacent (!i', y)
           |> Seq.filter (fun (x, y) ->
-               (not (is_digit lines.(y).[x])) && lines.(y).[x] <> '.')
+            (not (is_digit lines.(y).[x])) && lines.(y).[x] <> '.')
           |> Seq.iter (fun k ->
-               add_link k key;
-               add_link key k);
+            add_link k key;
+            add_link key k);
           i' := !i' + 1
         done;
         let value = Num !num in
@@ -79,8 +79,8 @@ let find_adjacent_nodes (x, y) =
 let has_adjacent_symbol (x, y) =
   find_adjacent_nodes (x, y)
   |> Seq.exists (function
-       | Symbol _ -> true
-       | _ -> false)
+    | Symbol _ -> true
+    | _ -> false)
 
 let part1 () =
   Hashtbl.to_seq nodes
@@ -95,8 +95,8 @@ let part1 () =
 let calculate_gear_ratio (x, y) =
   find_adjacent_nodes (x, y)
   |> Seq.filter_map (function
-       | Num n -> Some n
-       | _ -> None)
+    | Num n -> Some n
+    | _ -> None)
   |> List.of_seq
   |> function
   | [ a; b ] -> Some (a * b)
@@ -105,9 +105,9 @@ let calculate_gear_ratio (x, y) =
 let part2 () =
   Hashtbl.to_seq nodes
   |> Seq.filter_map (fun (key, value) ->
-       match value with
-       | Symbol '*' -> Some key
-       | _ -> None)
+    match value with
+    | Symbol '*' -> Some key
+    | _ -> None)
   |> Seq.filter_map calculate_gear_ratio
   |> Seq.fold_left ( + ) 0
   |> Printf.printf "Part 2: %d\n"

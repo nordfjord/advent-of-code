@@ -30,11 +30,11 @@ let part2 instructions =
   |> Seq.concat_map (fun instr -> Instr.toList instr |> List.to_seq)
   |> Seq.scan ( + ) 1
   |> Seq.mapi (fun i spritePosition ->
-       let cursorPosition = i mod 40 in
-       if abs (spritePosition - cursorPosition) < 2 then '#' else '.')
+    let cursorPosition = i mod 40 in
+    if abs (spritePosition - cursorPosition) < 2 then '#' else '.')
   |> Seq.iteri (fun i c ->
-       if i mod 40 = 0 then printf "\n";
-       printf "%c" c)
+    if i mod 40 = 0 then printf "\n";
+    printf "%c" c)
 
 let instructions = Prelude.Aoc.stdin_seq () |> Seq.filter_map Instr.parse
 

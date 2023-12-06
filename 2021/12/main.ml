@@ -4,9 +4,9 @@ let get_input () =
     | s -> Some s
     | exception End_of_file -> None)
   |> Seq.map (fun s ->
-       match String.split_on_char '-' s with
-       | [ a; b ] -> (a, b)
-       | _ -> failwith "invalid input")
+    match String.split_on_char '-' s with
+    | [ a; b ] -> (a, b)
+    | _ -> failwith "invalid input")
   |> Seq.fold_left
        (fun acc (start, end_) ->
          (match Hashtbl.find_opt acc start with
@@ -37,8 +37,8 @@ let bfs nodes start dst =
       |> List.map (fun next -> next :: path)
       |> List.filter (fun p -> not (Hashtbl.mem visited p))
       |> List.iter (fun path ->
-           Hashtbl.add visited path ();
-           Queue.add path q))
+        Hashtbl.add visited path ();
+        Queue.add path q))
   done;
   !result
 

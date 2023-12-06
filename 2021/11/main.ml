@@ -5,12 +5,18 @@ let get_input () =
     | exception End_of_file -> None)
   |> Array.of_seq
   |> Array.map (fun s ->
-       String.to_seq s |> Seq.map (fun c -> Char.code c - Char.code '0') |> Array.of_seq)
+    String.to_seq s |> Seq.map (fun c -> Char.code c - Char.code '0') |> Array.of_seq)
 
 let adjacent n m (i, j) =
-  [ (i - 1, j - 1) ; (i - 1, j) ; (i - 1, j + 1)
-  ; (i,     j - 1) ;              (i,     j + 1)
-  ; (i + 1, j - 1) ; (i + 1, j) ; (i + 1, j + 1) ]
+  [ (i - 1, j - 1)
+  ; (i - 1, j)
+  ; (i - 1, j + 1)
+  ; (i, j - 1)
+  ; (i, j + 1)
+  ; (i + 1, j - 1)
+  ; (i + 1, j)
+  ; (i + 1, j + 1)
+  ]
   |> List.filter (fun (i, j) -> i >= 0 && i < n && j >= 0 && j < m)
 
 let step arr =
@@ -30,8 +36,8 @@ let step arr =
       flashed.(i).(j) <- true;
       adjacent n m (i, j)
       |> List.iter (fun (i, j) ->
-           arr.(i).(j) <- arr.(i).(j) + 1;
-           flash (i, j)))
+        arr.(i).(j) <- arr.(i).(j) + 1;
+        flash (i, j)))
   in
   for_each (fun (i, j) -> arr.(i).(j) <- arr.(i).(j) + 1);
   for_each flash;

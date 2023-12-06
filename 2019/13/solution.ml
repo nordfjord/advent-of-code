@@ -199,11 +199,11 @@ let part2 () =
   let inputs =
     Seq.ints 0
     |> Seq.map (fun _ ->
-         let ball_x, player_x = ball_and_paddle_location () in
-         print_string "\027[2J";
-         print floor;
-         printf "Score: %d\n%!" !score;
-         compare ball_x player_x)
+      let ball_x, player_x = ball_and_paddle_location () in
+      print_string "\027[2J";
+      print floor;
+      printf "Score: %d\n%!" !score;
+      compare ball_x player_x)
     |> Seq.to_dispenser
   in
   instr_seq program inputs
@@ -211,9 +211,9 @@ let part2 () =
   |> Seq.map List.of_seq
   |> Seq.map parse_instr
   |> Seq.iter (fun (x, y, tile) ->
-       match (x, y) with
-       | -1, 0 -> score := tile
-       | _ -> Hashtbl.replace floor (x, y) tile);
+    match (x, y) with
+    | -1, 0 -> score := tile
+    | _ -> Hashtbl.replace floor (x, y) tile);
   print_string "\027[2J";
   print floor;
   printf "Score: %d\n%!" !score
