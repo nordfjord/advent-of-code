@@ -12,7 +12,7 @@ module Hand = struct
     | 'A' -> 14
     | 'K' -> 13
     | 'Q' -> 12
-    | 'J' -> 11
+    | 'J' -> -1
     | 'T' -> 10
     | c -> int_of_char c - int_of_char '0'
 
@@ -20,7 +20,7 @@ module Hand = struct
     | 14 -> 'A'
     | 13 -> 'K'
     | 12 -> 'Q'
-    | 11 -> 'J'
+    | -1 -> 'J'
     | 10 -> 'T'
     | c -> char_of_int (c + int_of_char '0')
 
@@ -29,14 +29,22 @@ module Hand = struct
   let to_string h = h |> List.map to_char |> List.to_seq |> String.of_seq
 
   let rank hand =
+    let no_jacks = hand |> List.filter (fun x -> x <> -1) in
+    let jacks = hand |> List.filter (fun x -> x = -1) |> List.length in
     let cards =
-      hand
+      no_jacks
       |> List.sort compare
       |> List.to_seq
       |> Seq.group ( = )
       |> Seq.map Seq.length
       |> List.of_seq
       |> List.sort (fun a b -> -compare a b)
+    in
+    let cards =
+      match cards with
+      | [] -> [ jacks ]
+      | [ x ] -> [ x + jacks ]
+      | x :: xs -> (x + jacks) :: xs
     in
     match cards with
     | [ 5 ] -> 6
@@ -78,13 +86,14 @@ let tap f x =
 let part1 () =
   hands
   |> List.sort (fun (h1, _) (h2, _) -> Hand.compare h1 h2)
-  |> List.map (tap (show_parsed >> print_endline))
   |> List.mapi (fun i x -> (i + 1, x))
   |> List.fold_left
        (fun acc (i, (h, bid)) ->
-         Printf.printf "%d %s %d\n" i (Hand.to_string h) bid;
+         Printf.printf "i=%d; h=%s; r=%d; b=%d\n" i (Hand.to_string h) (Hand.rank h) bid;
          acc + (i * bid))
        0
   |> Printf.printf "Part 1: %d\n"
 
-let () = part1 ()
+let () =
+  part1 ();
+  "QQQJQ" |> Hand.of_string |> Hand.rank |> Printf.printf "%d\n"
