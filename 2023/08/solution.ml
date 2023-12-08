@@ -5,17 +5,13 @@ let lines =
     | exception End_of_file -> None)
   |> Array.of_seq
 
-type direction =
-  | Left
-  | Right
-
 let parse input =
   let directions =
     input.(0)
     |> String.to_seq
     |> Seq.map (function
-      | 'L' -> Left
-      | 'R' -> Right
+      | 'L' -> fst
+      | 'R' -> snd
       | _ -> failwith "invalid direction")
     |> Array.of_seq
   in
@@ -32,45 +28,35 @@ let directions, graph = parse lines
 let part1 directions graph =
   let rec aux curr i =
     let dir = directions.(i mod Array.length directions) in
-    let l, r = Hashtbl.find graph curr in
-    let next =
-      match dir with
-      | Left -> l
-      | Right -> r
-    in
+    let next = Hashtbl.find graph curr |> dir in
     match next with
     | "ZZZ" -> i + 1
     | _ -> aux next (i + 1)
   in
   aux "AAA" 0
 
-let rec solve start i directions graph visited =
-  let dir = directions.(i mod Array.length directions) in
-  let l, r = Hashtbl.find graph start in
-  let next =
-    match dir with
-    | Left -> l
-    | Right -> r
-  in
-  match visited with
-  | (_, z) :: _ when next = z -> visited
-  | _ when next |> String.ends_with ~suffix:"Z" ->
-    solve next (i + 1) directions graph ((i + 1, next) :: visited)
-  | _ -> solve next (i + 1) directions graph visited
-
 let lcd a b =
   let rec gcd a b = if b = 0 then a else gcd b (a mod b) in
   a * b / gcd a b
 
-let rec part2 directions graph =
+let part2 directions graph =
+  (* It turned out that each starting point only had a single endpoint *)
+  let rec aux curr i visited =
+    let dir = directions.(i mod Array.length directions) in
+    let next = Hashtbl.find graph curr |> dir in
+    match visited with
+    | Some (j, s) when s = next -> j
+    | _ when next |> String.ends_with ~suffix:"Z" -> aux next (i + 1) (Some (i + 1, next))
+    | _ -> aux next (i + 1) visited
+  in
   let starting_points =
     graph
     |> Hashtbl.to_seq_keys
     |> Seq.filter (fun x -> x |> String.ends_with ~suffix:"A")
     |> List.of_seq
   in
-  let cycles = starting_points |> List.map (fun s -> solve s 0 directions graph []) in
-  cycles |> List.fold_left (fun acc l -> lcd acc (List.hd l |> fst)) 1
+  let cycles = starting_points |> List.map (fun s -> aux s 0 None) in
+  cycles |> List.fold_left (fun acc x -> lcd acc x) 1
 
 let () =
   part1 directions graph |> Printf.printf "Part 1: %d\n";
