@@ -29,8 +29,20 @@ let parse input =
 
 let directions, graph = parse lines
 
-type curr = string list [@@deriving show]
-type cycles = (int * string) list list [@@deriving show]
+let part1 directions graph =
+  let rec aux curr i =
+    let dir = directions.(i mod Array.length directions) in
+    let l, r = Hashtbl.find graph curr in
+    let next =
+      match dir with
+      | Left -> l
+      | Right -> r
+    in
+    match next with
+    | "ZZZ" -> i + 1
+    | _ -> aux next (i + 1)
+  in
+  aux "AAA" 0
 
 let rec solve start i directions graph visited =
   let dir = directions.(i mod Array.length directions) in
@@ -41,11 +53,8 @@ let rec solve start i directions graph visited =
     | Right -> r
   in
   match visited with
-  | (_, z) :: _ when next = z ->
-    Printf.printf "Found cycle: (%d, %s)\n%!" i next;
-    visited
+  | (_, z) :: _ when next = z -> visited
   | _ when next |> String.ends_with ~suffix:"Z" ->
-    Printf.printf "Found end: (%d, %s)\n%!" i next;
     solve next (i + 1) directions graph ((i + 1, next) :: visited)
   | _ -> solve next (i + 1) directions graph visited
 
@@ -60,9 +69,9 @@ let rec part2 directions graph =
     |> Seq.filter (fun x -> x |> String.ends_with ~suffix:"A")
     |> List.of_seq
   in
-  Printf.printf "Starting points: %s\n%!" (show_curr starting_points);
   let cycles = starting_points |> List.map (fun s -> solve s 0 directions graph []) in
-  Printf.printf "%s\n" (show_cycles cycles);
   cycles |> List.fold_left (fun acc l -> lcd acc (List.hd l |> fst)) 1
 
-let () = part2 directions graph |> Printf.printf "Part 2: %d\n"
+let () =
+  part1 directions graph |> Printf.printf "Part 1: %d\n";
+  part2 directions graph |> Printf.printf "Part 2: %d\n"
