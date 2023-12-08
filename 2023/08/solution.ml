@@ -35,7 +35,7 @@ let part1 directions graph =
   in
   aux "AAA" 0
 
-let lcd a b =
+let lcm a b =
   let rec gcd a b = if b = 0 then a else gcd b (a mod b) in
   a * b / gcd a b
 
@@ -56,7 +56,7 @@ let part2 directions graph =
     |> List.of_seq
   in
   let cycles = starting_points |> List.map (fun s -> aux s 0 None) in
-  cycles |> List.fold_left (fun acc x -> lcd acc x) 1
+  cycles |> List.fold_left (fun acc x -> lcm acc x) 1
 
 let () =
   part1 directions graph |> Printf.printf "Part 1: %d\n";
