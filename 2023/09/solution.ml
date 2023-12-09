@@ -21,8 +21,9 @@ let extent a = (a.(0), a.(Array.length a - 1))
 
 let extrapolate arr =
   let rec aux l arr =
-    let has_non_zero, next = extrapolate_one_level arr in
-    if has_non_zero then aux (extent next :: l) next else extent next :: l
+    match extrapolate_one_level arr with
+    | false, next -> extent next :: l
+    | true, next -> aux (extent next :: l) next
   in
   aux [ extent arr ] arr
 
