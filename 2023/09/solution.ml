@@ -24,18 +24,16 @@ let extrapolate list =
 
 let last l = List.rev l |> List.hd
 let determine_next = List.fold_left (fun acc xs -> acc + last xs) 0
+let determine_previous = List.fold_left (fun acc xs -> List.hd xs - acc) 0
+let extrapolated = lines |> List.map parse |> List.map extrapolate
 
 let () =
-  let extrapolated = lines |> List.map parse |> List.map extrapolate in
   extrapolated
   |> List.map determine_next
   |> List.fold_left ( + ) 0
   |> Printf.printf "Part 1: %d\n"
 
-let determine_previous = List.fold_left (fun acc xs -> List.hd xs - acc) 0
-
 let () =
-  let extrapolated = lines |> List.map parse |> List.map extrapolate in
   extrapolated
   |> List.map determine_previous
   |> List.fold_left ( + ) 0
