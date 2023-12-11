@@ -75,23 +75,25 @@ let find_loop start resolve =
           && col < cols
           && not (List.mem (row, col) path))
       in
-      if next = [] then start :: path else aux (List.hd next) (List.hd next :: path))
+      match next with
+      | [] -> path
+      | x::_ -> aux x (x :: path))
   in
   aux start [ start ]
 
 let () =
-  (* read from argv *)
   let start = find_start lines in
   let pipe = infer_pipe start in
   Printf.printf "start: %s (%c)\n" (show_intpair start) pipe;
   let resolve (row, col) = if (row, col) = start then pipe else lines.(row).[col] in
   let path = find_loop start resolve in
   Printf.printf "Part 1: %d\n" (List.length path / 2);
+  (* Part 2 *)
   let tbl = Hashtbl.create 100 in
   List.iter (fun x -> Hashtbl.add tbl x ()) path;
   let is_on_path = Hashtbl.mem tbl in
-  let is_horizontal = function
-    | '-' | 'J' | 'L' -> true
+  let should_consider = function
+    | '|' | 'J' | 'L' -> true
     | _ -> false
   in
   let inside = ref 0 in
@@ -99,7 +101,7 @@ let () =
     let is_inside = ref false in
     for col = 0 to cols - 1 do
       let c = resolve (row, col) in
-      if is_on_path (row, col) && not (is_horizontal c)
+      if is_on_path (row, col) && should_consider c
       then is_inside := not !is_inside
       else if not (is_on_path (row, col))
       then if !is_inside then inside := !inside + 1
