@@ -7,6 +7,7 @@ let lines =
 
 let rows = Array.length lines
 let cols = String.length lines.(0)
+let in_bounds (row, col) = 0 <= row && row < rows && 0 <= col && col < cols
 
 let adjacent (row, col) =
   [ (row - 1, col); (row + 1, col); (row, col - 1); (row, col + 1) ]
@@ -28,9 +29,7 @@ type intpair = int * int [@@deriving show]
 let infer_pipe (row, col) =
   let resolve (row, col) = lines.(row).[col] in
   let adjacent =
-    adjacent (row, col)
-    |> List.filter (fun (row, col) -> 0 <= row && row < rows && 0 <= col && col < cols)
-    |> List.map (fun x -> (x, resolve x))
+    adjacent (row, col) |> List.filter in_bounds |> List.map (fun x -> (x, resolve x))
   in
   let is_connected = function
     | (_row', col'), '|' -> col' = col
@@ -68,12 +67,7 @@ let find_loop start resolve =
          | '7' -> [ (row + 1, col); (row, col - 1) ]
          | 'F' -> [ (row + 1, col); (row, col + 1) ]
          | _ -> [])
-        |> List.filter (fun (row, col) ->
-          0 <= row
-          && row < rows
-          && 0 <= col
-          && col < cols
-          && not (Hashtbl.mem path (row, col)))
+        |> List.filter (fun x -> in_bounds x && not (Hashtbl.mem path x))
       in
       match next with
       | [] -> path
