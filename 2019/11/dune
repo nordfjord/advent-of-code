@@ -1,6 +1,6 @@
 (executable
  (name solution)
- (libraries prelude str)
+ (libraries computer prelude str)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.ord)))
 

@@ -1,3 +1,5 @@
+open Prelude
+
 let lines =
   Seq.of_dispenser (fun _ ->
     match read_line () with
@@ -6,17 +8,8 @@ let lines =
   |> List.of_seq
 
 let parse line = String.split_on_char ' ' line |> List.map int_of_string
-
-let rec pairwise = function
-  | x :: y :: rest -> (x, y) :: pairwise (y :: rest)
-  | _ -> []
-
-let extrapolate_one_level s = pairwise s |> List.map (fun (x, y) -> y - x)
-
-let extent l =
-  let h = List.hd l in
-  let t = List.rev l |> List.hd in
-  (h, t)
+let extrapolate_one_level s = List.pairwise s |> List.map (fun (x, y) -> y - x)
+let extent l = (List.hd l, List.last l)
 
 let extrapolate l =
   let rec aux l ls =
@@ -35,11 +28,11 @@ let extrapolated = lines |> List.map parse |> List.map extrapolate
 let () =
   extrapolated
   |> List.map determine_next
-  |> List.fold_left ( + ) 0
+  |> List.sum
   |> Printf.printf "Part 1: %d\n"
 
 let () =
   extrapolated
   |> List.map determine_previous
-  |> List.fold_left ( + ) 0
+  |> List.sum
   |> Printf.printf "Part 2: %d\n"

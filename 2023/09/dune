@@ -1,7 +1,7 @@
 (executable
  (name solution)
  (preprocess (pps ppx_deriving.show))
- (libraries str angstrom))
+ (libraries str angstrom prelude))
 
 (env
  (dev

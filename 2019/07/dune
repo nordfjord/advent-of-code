@@ -1,6 +1,6 @@
 (executable
  (name solution)
- (libraries prelude str domainslib)
+ (libraries computer str domainslib)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.ord)))
 

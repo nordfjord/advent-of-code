@@ -1,5 +1,5 @@
 open Printf
-open Prelude.Computer
+open Computer
 
 let input =
   let fh = open_in "./input.txt" in
