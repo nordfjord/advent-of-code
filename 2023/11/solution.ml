@@ -21,9 +21,10 @@ let connected_planets planets =
     | x :: xs -> Some (Sequence.of_list xs |> Sequence.map ~f:(tup x), xs))
   |> Sequence.concat
 
+let uncurry f (a, b) = f a b
+
 let planet_distances planets =
-  connected_planets planets
-  |> Sequence.fold ~init:0 ~f:(fun acc (x, y) -> acc + manhattan_distance x y)
+  connected_planets planets |> Sequence.sum (module Int) ~f:(uncurry manhattan_distance)
 
 let find_widening_points lines =
   let rows =
