@@ -56,7 +56,7 @@ let infer_pipe (row, col) =
 
 let find_loop start resolve =
   let rec aux (row, col) path =
-    if (row, col) = start && List.length path > 1
+    if (row, col) = start && Hashtbl.length path > 1
     then path
     else (
       let next =
@@ -73,25 +73,32 @@ let find_loop start resolve =
           && row < rows
           && 0 <= col
           && col < cols
-          && not (List.mem (row, col) path))
+          && not (Hashtbl.mem path (row, col)))
       in
       match next with
       | [] -> path
-      | x::_ -> aux x (x :: path))
+      | x :: _ ->
+        Hashtbl.add path x ();
+        aux x path)
   in
-  aux start [ start ]
+  let tbl = Hashtbl.create 100 in
+  Hashtbl.add tbl start ();
+  aux start tbl
 
 let () =
+  let time = Unix.gettimeofday () in
   let start = find_start lines in
   let pipe = infer_pipe start in
   Printf.printf "start: %s (%c)\n" (show_intpair start) pipe;
   let resolve (row, col) = if (row, col) = start then pipe else lines.(row).[col] in
   let path = find_loop start resolve in
-  Printf.printf "Part 1: %d\n" (List.length path / 2);
+  Printf.printf
+    "Part 1: %d (%f ms)\n"
+    (Hashtbl.length path / 2)
+    ((Unix.gettimeofday () -. time) *. 1000.);
   (* Part 2 *)
-  let tbl = Hashtbl.create 100 in
-  List.iter (fun x -> Hashtbl.add tbl x ()) path;
-  let is_on_path = Hashtbl.mem tbl in
+  let time = Unix.gettimeofday () in
+  let is_on_path = Hashtbl.mem path in
   let should_consider = function
     | '|' | 'J' | 'L' -> true
     | _ -> false
@@ -107,4 +114,4 @@ let () =
       then if !is_inside then inside := !inside + 1
     done
   done;
-  Printf.printf "Part 2: %d\n" !inside
+  Printf.printf "Part 2: %d (%fms)\n" !inside ((Unix.gettimeofday () -. time) *. 1000.)
