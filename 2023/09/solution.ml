@@ -5,27 +5,28 @@ let lines =
     | exception End_of_file -> None)
   |> List.of_seq
 
-let parse line = String.split_on_char ' ' line |> List.map int_of_string |> Array.of_list
+let parse line = String.split_on_char ' ' line |> List.map int_of_string
 
-let extrapolate_one_level s =
-  let a = Array.make (Array.length s - 1) 0 in
-  let has_non_zero = ref false in
-  for i = 0 to Array.length s - 2 do
-    let x, y = (s.(i), s.(i + 1)) in
-    a.(i) <- y - x;
-    if a.(i) <> 0 then has_non_zero := true
-  done;
-  (!has_non_zero, a)
+let rec pairwise = function
+  | x :: y :: rest -> (x, y) :: pairwise (y :: rest)
+  | _ -> []
 
-let extent a = (a.(0), a.(Array.length a - 1))
+let extrapolate_one_level s = pairwise s |> List.map (fun (x, y) -> y - x)
 
-let extrapolate arr =
-  let rec aux l arr =
-    match extrapolate_one_level arr with
-    | false, next -> extent next :: l
-    | true, next -> aux (extent next :: l) next
+let extent l =
+  let h = List.hd l in
+  let t = List.rev l |> List.hd in
+  (h, t)
+
+let extrapolate l =
+  let rec aux l ls =
+    let extrapolated = extrapolate_one_level l in
+    let extent = extent l in
+    if List.for_all (( = ) 0) extrapolated
+    then extent :: ls
+    else aux extrapolated (extent :: ls)
   in
-  aux [ extent arr ] arr
+  aux l []
 
 let determine_next = List.fold_left (fun acc (_, x) -> acc + x) 0
 let determine_previous = List.fold_left (fun acc (x, _) -> x - acc) 0
