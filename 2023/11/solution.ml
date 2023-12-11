@@ -3,13 +3,11 @@ open Stdio
 
 let lines = In_channel.input_lines stdin |> Array.of_list
 
-let find_all_planets arr =
-  Array.to_sequence_mutable arr
-  |> Sequence.concat_mapi ~f:(fun row line ->
+let find_all_planets =
+  Array.concat_mapi ~f:(fun row line ->
     line
     |> String.to_array
-    |> Array.to_sequence_mutable
-    |> Sequence.filter_mapi ~f:(fun col c ->
+    |> Array.filter_mapi ~f:(fun col c ->
       match c with
       | '#' -> Some (row, col)
       | _ -> None))
@@ -48,7 +46,7 @@ let adjust factor (x, y) =
   let y' = y + ((widened_cols * factor) - widened_cols) in
   (x', y')
 
-let planets = find_all_planets lines |> Sequence.to_array
+let planets = find_all_planets lines
 
 let () =
   let factor = 2 in
