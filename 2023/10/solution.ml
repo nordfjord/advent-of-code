@@ -1,10 +1,7 @@
-let lines =
-  Seq.of_dispenser (fun _ ->
-    match read_line () with
-    | x -> Some x
-    | exception End_of_file -> None)
-  |> Array.of_seq
+open Core
+open Poly
 
+let lines = Stdio.In_channel.input_lines Stdio.stdin |> Array.of_list
 let rows = Array.length lines
 let cols = String.length lines.(0)
 let in_bounds (row, col) = 0 <= row && row < rows && 0 <= col && col < cols
@@ -14,22 +11,20 @@ let adjacent (row, col) =
 
 let find_start lines =
   lines
-  |> Array.to_seqi
-  |> Seq.find_map (fun (row, line) ->
-    line
-    |> String.to_seqi
-    |> Seq.find_map (fun (col, c) ->
-      match c with
-      | 'S' -> Some (row, col)
-      | _ -> None))
-  |> Option.get
+  |> Array.find_mapi ~f:(fun row line ->
+    match String.index line 'S' with
+    | Some col -> Some (row, col)
+    | None -> None)
+  |> Option.value_exn
 
 type intpair = int * int [@@deriving show]
 
 let infer_pipe (row, col) =
   let resolve (row, col) = lines.(row).[col] in
   let adjacent =
-    adjacent (row, col) |> List.filter in_bounds |> List.map (fun x -> (x, resolve x))
+    adjacent (row, col)
+    |> List.filter ~f:in_bounds
+    |> List.map ~f:(fun x -> (x, resolve x))
   in
   let is_connected = function
     | (_row', col'), '|' -> col' = col
@@ -41,8 +36,8 @@ let infer_pipe (row, col) =
     | _ -> false
   in
   let connected =
-    List.filter is_connected adjacent
-    |> List.map (fun ((row', col'), _pipe) -> (row' - row, col' - col))
+    List.filter adjacent ~f:is_connected
+    |> List.map ~f:(fun ((row', col'), _pipe) -> (row' - row, col' - col))
   in
   match connected with
   | [ (-1, 0); (1, 0) ] -> '|'
@@ -55,7 +50,8 @@ let infer_pipe (row, col) =
 
 let find_loop start resolve =
   let rec aux (row, col) path =
-    if (row, col) = start && Hashtbl.length path > 1
+    let open Poly in
+    if (row, col) = start && Hashtbl.Poly.length path > 1
     then path
     else (
       let next =
@@ -67,31 +63,26 @@ let find_loop start resolve =
          | '7' -> [ (row + 1, col); (row, col - 1) ]
          | 'F' -> [ (row + 1, col); (row, col + 1) ]
          | _ -> [])
-        |> List.filter (fun x -> in_bounds x && not (Hashtbl.mem path x))
+        |> List.filter ~f:(fun x -> in_bounds x && not (Hashtbl.mem path x))
       in
       match next with
       | [] -> path
       | x :: _ ->
-        Hashtbl.add path x ();
+        Hashtbl.Poly.add path ~key:x ~data:() |> ignore;
         aux x path)
   in
-  let tbl = Hashtbl.create 100 in
-  Hashtbl.add tbl start ();
+  let tbl = Hashtbl.Poly.create () in
+  Hashtbl.add tbl ~key:start ~data:() |> ignore;
   aux start tbl
 
 let () =
-  let time = Unix.gettimeofday () in
   let start = find_start lines in
   let pipe = infer_pipe start in
   Printf.printf "start: %s (%c)\n" (show_intpair start) pipe;
   let resolve (row, col) = if (row, col) = start then pipe else lines.(row).[col] in
   let path = find_loop start resolve in
-  Printf.printf
-    "Part 1: %d (%f ms)\n"
-    (Hashtbl.length path / 2)
-    ((Unix.gettimeofday () -. time) *. 1000.);
+  Stdio.printf "Part 1: %d\n" (Hashtbl.length path / 2);
   (* Part 2 *)
-  let time = Unix.gettimeofday () in
   let is_on_path = Hashtbl.mem path in
   let should_consider = function
     | '|' | 'J' | 'L' -> true
@@ -108,4 +99,4 @@ let () =
       then if !is_inside then inside := !inside + 1
     done
   done;
-  Printf.printf "Part 2: %d (%fms)\n" !inside ((Unix.gettimeofday () -. time) *. 1000.)
+  Printf.printf "Part 2: %d\n" !inside

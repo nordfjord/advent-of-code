@@ -1,6 +1,6 @@
 (executable
  (name solution)
- (libraries str))
+ (libraries str core))
 
 (env
  (dev

@@ -1,16 +1,15 @@
-let lines =
-  Seq.of_dispenser (fun _ ->
-    match read_line () with
-    | x -> Some x
-    | exception End_of_file -> None)
-  |> Array.of_seq
+open Core
+
+let lines = Stdio.In_channel.input_lines Stdio.In_channel.stdin
 
 let parse_line str =
   let chars =
-    String.to_seq str
-    |> Seq.filter (fun c -> '0' <= c && c <= '9')
-    |> Seq.map (fun c -> Char.code c - Char.code '0')
-    |> Array.of_seq
+    str
+    |> String.to_array
+    |> Array.filter_map ~f:(fun c ->
+      match c with
+      | '0' .. '9' -> Some (Char.to_int c - Char.to_int '0')
+      | _ -> None)
   in
   if Array.length chars = 0
   then 0
@@ -20,11 +19,7 @@ let parse_line str =
     (first * 10) + last)
 
 let part1 () =
-  lines
-  |> Array.to_seq
-  |> Seq.map parse_line
-  |> Seq.fold_left ( + ) 0
-  |> Printf.printf "Part 1: %d\n"
+  lines |> List.sum (module Int) ~f:parse_line |> Printf.printf "Part 1: %d\n"
 
 let transformations =
   [ ("one", 1)
@@ -44,18 +39,16 @@ let rec parse_line_2 (firstNumber, lastNumber) i str =
   else (
     let c = str.[i] in
     match c with
-    | c when '0' <= c && c <= '9' ->
-      let n = Char.code c - Char.code '0' in
+    | '0' .. '9' ->
+      let n = Char.to_int c - Char.to_int '0' in
       (match firstNumber with
        | -1 -> parse_line_2 (n, n) (i + 1) str
        | _ -> parse_line_2 (firstNumber, n) (i + 1) str)
     | _ ->
-      let remaining_length = String.length str - i in
       let n =
         transformations
-        |> List.filter (fun (s, _) -> String.length s <= remaining_length)
-        |> List.find_opt (fun (s, _) -> String.sub str i (String.length s) = s)
-        |> Option.map snd
+        |> List.find_map ~f:(fun (s, n) ->
+          if String.is_substring_at str ~pos:i ~substring:s then Some n else None)
       in
       (match n with
        | None -> parse_line_2 (firstNumber, lastNumber) (i + 1) str
@@ -64,8 +57,7 @@ let rec parse_line_2 (firstNumber, lastNumber) i str =
 
 let part2 () =
   lines
-  |> Array.map (fun l -> parse_line_2 (-1, -1) 0 l)
-  |> Array.fold_left ( + ) 0
+  |> List.sum (module Int) ~f:(parse_line_2 (-1, -1) 0)
   |> Printf.printf "Part 2: %d\n"
 
 let () =
