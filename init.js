@@ -11,8 +11,8 @@ const input = await fetch(`https://adventofcode.com/2023/day/${day}/input`, {
 
 const dunefile = `(executable
  (name solution)
- (preprocess (pps ppx_deriving.show))
- (libraries str angstrom core))
+ (preprocess (pps ppx_deriving.show ppx_sexp_conv))
+ (libraries str base stdio parsexp))
 
 (env
  (dev
@@ -20,12 +20,13 @@ const dunefile = `(executable
    (:standard -warn-error -A))))
 `
 
-const solutionfile = `open Core
+const solutionfile = `open Base
+open Stdio
 
-let lines = Stdio.In_channel.input_lines Stdio.In_channel.stdin
+let lines = In_channel.input_lines stdin
 
 let () =
-  lines |> List.length |> Stdio.printf "%d\\n"
+  lines |> List.length |> printf "%d\\n"
 `
 
 const day_ = day.padStart(2, '0')
