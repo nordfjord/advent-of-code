@@ -1,62 +1,59 @@
-let lines =
-  Seq.of_dispenser (fun _ ->
-    match read_line () with
-    | x -> Some x
-    | exception End_of_file -> None)
-  |> Array.of_seq
+open Base
+open Stdio
+
+let lines = In_channel.input_lines stdin |> Array.of_list
 
 let find_all_planets arr =
-  Array.to_seq arr
-  |> Seq.mapi (fun row line ->
-    line |> String.to_seq |> Seq.mapi (fun col c -> ((row, col), c)))
-  |> Seq.concat
-  |> Seq.filter_map (fun ((row, col), c) ->
-    match c with
-    | '#' -> Some (row, col)
-    | _ -> None)
+  Array.to_sequence_mutable arr
+  |> Sequence.concat_mapi ~f:(fun row line ->
+    line
+    |> String.to_array
+    |> Array.to_sequence_mutable
+    |> Sequence.filter_mapi ~f:(fun col c ->
+      match c with
+      | '#' -> Some (row, col)
+      | _ -> None))
 
 let manhattan_distance (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
 
 let planet_distances planets =
-  let planets = Array.to_seq planets in
-  planets
-  |> Seq.mapi (fun i planet ->
-    planets
-    |> Seq.drop (i + 1)
-    |> Seq.map (manhattan_distance planet)
-    |> Seq.fold_left ( + ) 0)
-  |> Seq.fold_left ( + ) 0
+  let result = ref 0 in
+  for i = 0 to Array.length planets - 1 do
+    for j = i + 1 to Array.length planets - 1 do
+      result := !result + manhattan_distance planets.(i) planets.(j)
+    done
+  done;
+  !result
 
 let find_widening_points lines =
   let rows =
-    Array.to_seq lines
-    |> Seq.mapi (fun i line -> (i, line))
-    |> Seq.filter (fun (_, line) -> String.for_all (( = ) '.') line)
-    |> Seq.map fst
+    lines
+    |> Array.to_sequence_mutable
+    |> Sequence.filter_mapi ~f:(fun i line ->
+      if String.for_all ~f:(Char.equal '.') line then Some i else None)
   in
   let cols =
-    Seq.ints 0
-    |> Seq.take (String.length lines.(0) - 1)
-    |> Seq.filter (fun i ->
-      Array.to_seq lines |> Seq.map (fun line -> line.[i]) |> Seq.for_all (( = ) '.'))
+    Sequence.range 0 (String.length lines.(0))
+    |> Sequence.filter ~f:(fun i ->
+      lines |> Array.for_all ~f:(fun line -> Char.equal line.[i] '.'))
   in
   (rows, cols)
 
 let rows, cols = find_widening_points lines
 
 let adjust factor (x, y) =
-  let intersecting_rows = Seq.filter (fun x' -> x' < x) rows |> Seq.length in
-  let intersecting_cols = Seq.filter (fun y' -> y' < y) cols |> Seq.length in
-  let x' = x + ((intersecting_rows * factor) - intersecting_rows) in
-  let y' = y + ((intersecting_cols * factor) - intersecting_cols) in
+  let widened_rows = Sequence.count rows ~f:(Int.( > ) x) in
+  let widened_cols = Sequence.count cols ~f:(Int.( > ) y) in
+  let x' = x + ((widened_rows * factor) - widened_rows) in
+  let y' = y + ((widened_cols * factor) - widened_cols) in
   (x', y')
 
-let planets = find_all_planets lines |> Array.of_seq
+let planets = find_all_planets lines |> Sequence.to_array
 
 let () =
   let factor = 2 in
-  planets |> Array.map (adjust factor) |> planet_distances |> Printf.printf "Part 1: %d\n"
+  planets |> Array.map ~f:(adjust factor) |> planet_distances |> printf "Part 1: %d\n"
 
 let () =
   let factor = 1_000_000 in
-  planets |> Array.map (adjust factor) |> planet_distances |> Printf.printf "Part 2: %d\n"
+  planets |> Array.map ~f:(adjust factor) |> planet_distances |> printf "Part 2: %d\n"
