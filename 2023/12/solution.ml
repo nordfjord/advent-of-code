@@ -1,5 +1,4 @@
 open Base
-open Poly
 open Stdio
 
 let lines = In_channel.input_lines stdin
@@ -22,7 +21,7 @@ let satisfies damaged springs =
       | _ -> failwith "invalid spring")
     |> List.filter ~f:(fun x -> x > 0)
   in
-  List.equal Int.equal damaged contiguous_damaged
+  [%equal: int list] damaged contiguous_damaged
 
 let prepend_to_all x l = Sequence.map ~f:(fun lst -> x :: lst) l
 
@@ -32,7 +31,7 @@ let rec gen = function
     let subperms = gen (n - 1) in
     Sequence.append (prepend_to_all '.' subperms) (prepend_to_all '#' subperms)
 
-let permutations springs =
+let count_valid_permutations (springs, damaged) =
   let arr = springs |> String.to_array in
   let indexes =
     arr
@@ -42,15 +41,17 @@ let permutations springs =
       | _ -> None)
   in
   gen (Array.length indexes)
-  |> Sequence.map ~f:(fun chars ->
+  |> Sequence.count ~f:(fun chars ->
     let new_arr = Array.copy arr in
     chars |> List.iteri ~f:(fun i c -> new_arr.(indexes.(i)) <- c);
-    new_arr |> String.of_array)
+    let str = new_arr |> String.of_array in
+    satisfies damaged str)
 
-let part1 (springs, damaged) =
-  permutations springs |> Sequence.count ~f:(satisfies damaged)
-
-let () = lines |> List.map ~f:parse |> List.sum (module Int) ~f:part1 |> printf "%d\n"
+let () =
+  lines
+  |> List.map ~f:parse
+  |> List.sum (module Int) ~f:count_valid_permutations
+  |> printf "%d\n"
 
 let count_valid_permutations (springs, damaged') =
   let damaged = Array.of_list damaged' in
@@ -70,7 +71,7 @@ let count_valid_permutations (springs, damaged') =
         let ans =
           [ '.'; '#' ]
           |> List.fold_left ~init:0 ~f:(fun acc c ->
-            if springs.[i] = c || springs.[i] = '?'
+            if [%equal: char] springs.[i] c || [%equal: char] springs.[i] '?'
             then (
               match (c, dmg) with
               | '.', 0 -> acc + aux (i + 1, 0, di)
