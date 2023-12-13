@@ -8,4 +8,4 @@ cookie.txt
 
 **/_build/
 
-./*/*/*/input.txt
+**/input.txt
