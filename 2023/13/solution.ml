@@ -72,9 +72,11 @@ let solve find_reflection (rows, cols) =
      | None -> failwith "No reflection")
 
 let () =
+  let time = Unix.gettimeofday () in
   grids
   |> List.sum (module Int) ~f:(solve (find_reflection Part1.is_reflected_at))
   |> printf "%d\n";
   grids
   |> List.sum (module Int) ~f:(solve (find_reflection Part2.is_reflected_at))
-  |> printf "%d\n"
+  |> printf "%d\n";
+  printf "%fms" ((Unix.gettimeofday() -. time) *. 1000.)
