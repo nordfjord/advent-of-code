@@ -53,38 +53,39 @@ let () =
   |> List.sum (module Int) ~f:count_valid_permutations
   |> printf "%d\n"
 
-let count_valid_permutations (springs, damaged') =
-  let damaged = Array.of_list damaged' in
-  let dmglen = Array.length damaged in
-  (* Add an extra '.' to the end to ensure our logic below works *)
+let memo_rec f =
   let cache = Hashtbl.Poly.create () in
-  let rec aux (i, dmg, di) =
-    match Hashtbl.find cache (i, dmg, di) with
-    | Some x -> x
+  let rec g x =
+    match Hashtbl.find cache x with
+    | Some v -> v
     | None ->
-      if i = String.length springs
-      then
-        if (di = dmglen && dmg = 0) || (di = dmglen - 1 && damaged.(di) = dmg)
-        then 1
-        else 0
-      else (
-        let ans =
-          [ '.'; '#' ]
-          |> List.fold_left ~init:0 ~f:(fun acc c ->
-            if [%equal: char] springs.[i] c || [%equal: char] springs.[i] '?'
-            then (
-              match (c, dmg) with
-              | '.', 0 -> acc + aux (i + 1, 0, di)
-              | '.', dmg when dmg > 0 && di < dmglen && damaged.(di) = dmg ->
-                acc + aux (i + 1, 0, di + 1)
-              | '#', _ -> acc + aux (i + 1, dmg + 1, di)
-              | _ -> acc)
-            else acc)
-        in
-        Hashtbl.add cache ~key:(i, dmg, di) ~data:ans |> ignore;
-        ans)
+      let res = f g x in
+      Hashtbl.add cache ~key:x ~data:res |> ignore;
+      res
   in
-  aux (0, 0, 0)
+  g
+
+let count_valid_permutations (springs, damaged) =
+  let aux aux (i, dmg, dmgs) =
+    if i = String.length springs
+    then (
+      match (dmg, dmgs) with
+      | 0, [] -> 1
+      | x, [ y ] when x = y -> 1
+      | _ -> 0)
+    else
+      [ '.'; '#' ]
+      |> List.fold_left ~init:0 ~f:(fun acc c ->
+        if Char.equal springs.[i] c || Char.equal springs.[i] '?'
+        then (
+          match (c, dmg, dmgs) with
+          | '.', 0, _ -> acc + aux (i + 1, 0, dmgs)
+          | '.', dmg, x :: xs when dmg = x -> acc + aux (i + 1, 0, xs)
+          | '#', _, _ -> acc + aux (i + 1, dmg + 1, dmgs)
+          | _ -> acc)
+        else acc)
+  in
+  memo_rec aux (0, 0, damaged)
 
 let () =
   let parse_and_expand line =
