@@ -1,20 +1,25 @@
 open Base
 open Stdio
 
+let to_mask =
+  Array.foldi ~init:0 ~f:(fun i mask c ->
+    match c with
+    | '#' -> mask lor (1 lsl i)
+    | _ -> mask)
+
 let grids =
   In_channel.input_all stdin
   |> Str.split (Str.regexp_string "\n\n")
   |> List.map ~f:(fun s ->
-    s |> String.split_lines |> List.map ~f:String.to_array |> Array.of_list)
+    let lines = String.split_lines s |> List.map ~f:String.to_array |> Array.of_list in
+    (Array.map lines ~f:to_mask, Array.transpose_exn lines |> Array.map ~f:to_mask))
 
 module Part1 = struct
-  let eq = Array.equal Char.equal
-
   let is_reflected_at arr i =
     let rec aux i j =
       if i < 0 || j >= Array.length arr
       then true
-      else if eq arr.(i) arr.(j)
+      else if arr.(i) = arr.(j)
       then aux (i - 1) (j + 1)
       else false
     in
@@ -28,16 +33,10 @@ module Part2 = struct
     | NotEqual
 
   let smudge_eq a1 a2 =
-    let rec aux count i =
-      if count > 1
-      then NotEqual
-      else if i = Array.length a1
-      then if count = 1 then Smudge else Equal
-      else if Char.equal a1.(i) a2.(i)
-      then aux count (i + 1)
-      else aux (count + 1) (i + 1)
-    in
-    aux 0 0
+    match a1 lxor a2 with
+    | 0 -> Equal
+    | x when x land (x - 1) = 0 -> Smudge
+    | _ -> NotEqual
 
   let is_reflected_at arr i =
     let rec aux i j smudges =
@@ -64,11 +63,11 @@ let find_reflection is_reflected_at arr =
   in
   aux 0
 
-let solve find_reflection arr =
-  match find_reflection arr with
+let solve find_reflection (rows, cols) =
+  match find_reflection rows with
   | Some i -> i * 100
   | None ->
-    (match find_reflection (Array.transpose_exn arr) with
+    (match find_reflection cols with
      | Some i -> i
      | None -> failwith "No reflection")
 
