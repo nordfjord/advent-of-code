@@ -7,3 +7,5 @@ node_modules/
 cookie.txt
 
 **/_build/
+
+./*/*/*/input.txt
