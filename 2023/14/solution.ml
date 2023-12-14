@@ -18,7 +18,8 @@ let move_north grid =
         grid.(r).(c) <- '.';
         grid.(!newr).(c) <- 'O')
     done
-  done
+  done;
+  grid
 
 let move_west grid =
   for c = 0 to cols - 1 do
@@ -32,7 +33,8 @@ let move_west grid =
         grid.(r).(c) <- '.';
         grid.(r).(!newc) <- 'O')
     done
-  done
+  done;
+  grid
 
 let move_south grid =
   for r = rows - 1 downto 0 do
@@ -48,7 +50,8 @@ let move_south grid =
         grid.(r).(c) <- '.';
         grid.(!newr).(c) <- 'O')
     done
-  done
+  done;
+  grid
 
 let move_east grid =
   for c = cols - 1 downto 0 do
@@ -64,28 +67,20 @@ let move_east grid =
         grid.(r).(c) <- '.';
         grid.(r).(!newc) <- 'O')
     done
-  done
+  done;
+  grid
 
 let cycle_all coords =
-  let coords = Array.copy_matrix coords in
-  move_north coords;
-  move_west coords;
-  move_south coords;
-  move_east coords;
-  coords
+  Array.copy_matrix coords |> move_north |> move_west |> move_south |> move_east
 
-let solve grid =
+let score grid =
   Array.foldi grid ~init:0 ~f:(fun r acc line ->
     let count = Array.count line ~f:(Char.equal 'O') in
     let score = count * (rows - r) in
     acc + score)
 
-let tap f x =
-  f x;
-  x
-
 (* part 1 *)
-let () = Array.copy_matrix lines |> tap move_north |> solve |> printf "%d\n"
+let () = Array.copy_matrix lines |> move_north |> score |> printf "%d\n"
 
 let find_cycle grid =
   let seen = Hashtbl.Poly.create () in
@@ -107,4 +102,4 @@ let find_cycle grid =
   aux 1 grid
 
 (* part 2 *)
-let () = find_cycle lines |> solve |> printf "%d\n"
+let () = find_cycle lines |> score |> printf "%d\n"
