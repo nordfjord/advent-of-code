@@ -1,0 +1,9 @@
+(executable
+ (name solution)
+ (preprocess (pps ppx_deriving.show ppx_sexp_conv))
+ (libraries str base stdio parsexp))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A))))
