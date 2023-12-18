@@ -20,11 +20,7 @@ type op =
   | Remove of string
   | Add of string * int
 
-module Hashtable = struct
-  type 'a t = 'a array array
-
-  end
-let boxes = Array.init 256 ~f:(fun _ -> [||])
+let boxes = Array.init 256 ~f:(fun _ -> [])
 
 let double_array arr =
   let len = Array.length arr in
@@ -69,8 +65,7 @@ let () =
         result + acc)
     in
     acc + sum)
-      |> printf "%d\n";
-    Array.max_elt boxes ~compare:(fun a b -> List.length a - List.length b)
-      |> Option.map ~f:List.length
-      |> Option.iter ~f:(printf "len: %d\n")
-
+  |> printf "%d\n";
+  Array.max_elt boxes ~compare:(fun a b -> List.length a - List.length b)
+  |> Option.map ~f:List.length
+  |> Option.iter ~f:(printf "len: %d\n")
