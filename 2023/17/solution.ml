@@ -53,27 +53,28 @@ end
 let in_bounds grid (x, y) =
   0 <= x && x < Array.length grid && 0 <= y && y < Array.length grid.(0)
 
-let left grid state =
+let left part1 grid state =
   let dir = Direction.turn_left state.direction in
   let x, y = Direction.translate dir state.coords in
-  if in_bounds grid (x, y)
+  if (part1 || state.consecutive >= 4) && in_bounds grid (x, y)
   then (
     let cost = state.cost + grid.(x).(y) in
     Some { coords = (x, y); direction = dir; cost; consecutive = 1 })
   else None
 
-let right grid state =
+let right part1 grid state =
   let dir = Direction.turn_right state.direction in
   let x, y = Direction.translate dir state.coords in
-  if in_bounds grid (x, y)
+  if (part1 || state.consecutive >= 4) && in_bounds grid (x, y)
   then (
     let cost = state.cost + grid.(x).(y) in
     Some { coords = (x, y); direction = dir; cost; consecutive = 1 })
   else None
 
-let continue grid state =
+let continue part1 grid state =
   let x, y = Direction.translate state.direction state.coords in
-  if in_bounds grid (x, y) && state.consecutive < 3
+  if (if part1 then state.consecutive < 3 else state.consecutive < 10)
+     && in_bounds grid (x, y)
   then (
     let cost = state.cost + grid.(x).(y) in
     Some
@@ -84,7 +85,7 @@ let continue grid state =
       })
   else None
 
-let bfs grid start =
+let bfs part1 grid start =
   let q = Queue.create () in
   let visited = Hashtbl.Poly.create () in
   Queue.enqueue q { coords = start; direction = Right; cost = 0; consecutive = 0 };
@@ -93,10 +94,10 @@ let bfs grid start =
   while not (Queue.is_empty q) do
     let state = Queue.dequeue_exn q in
     if state.coords = (Array.length grid - 1, Array.length grid.(0) - 1)
-    then (
-      result := min state.cost !result;
-      printf "Path: cost=%d\n%!" state.cost);
-    [ left grid state; right grid state; continue grid state ]
+       && (part1 || state.consecutive >= 4)
+       && state.cost < !result
+    then result := state.cost;
+    [ left part1 grid state; right part1 grid state; continue part1 grid state ]
     |> List.filter_map ~f:Fn.id
     |> List.filter ~f:(fun s ->
       match Hashtbl.find visited (State.key s) with
@@ -110,5 +111,5 @@ let bfs grid start =
 
 let () =
   let start = (0, 0) in
-  let cost = bfs grid start in
-  printf "%d\n" cost
+  bfs true grid start |> printf "%d\n%!";
+  bfs false grid start |> printf "%d\n";
