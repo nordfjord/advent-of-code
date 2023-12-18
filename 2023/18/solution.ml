@@ -11,25 +11,28 @@ module Instruction = struct
   type t =
     { dir : dir
     ; steps : int
-    ; color : string
     }
 
   let dir t = t.dir
   let steps t = t.steps
-  let color t = t.color
 
-  let move t (x, y) =
-    if t.steps = 0
-    then None
-    else (
-      match t.dir with
-      | R -> Some ((x, y + 1), { t with steps = t.steps - 1 })
-      | L -> Some ((x, y - 1), { t with steps = t.steps - 1 })
-      | U -> Some ((x - 1, y), { t with steps = t.steps - 1 })
-      | D -> Some ((x + 1, y), { t with steps = t.steps - 1 }))
+  let of_string_p2 s =
+    let i = String.index_exn s '(' in
+    let j = String.index_exn s ')' in
+    let n = String.subo s ~pos:(i + 2) ~len:(j - i - 3) in
+    let n = Int.of_string @@ "0x" ^ n in
+    let dir =
+      match s.[String.length s - 2] with
+      | '0' -> R
+      | '1' -> D
+      | '2' -> L
+      | '3' -> U
+      | _ -> failwith "invalid direction"
+    in
+    { dir; steps = n }
 
   let of_string s =
-    Stdlib.Scanf.sscanf s "%c %d %s" (fun dir steps color ->
+    Stdlib.Scanf.sscanf s "%c %d %s" (fun dir steps _color ->
       let dir =
         match dir with
         | 'R' -> R
@@ -38,66 +41,54 @@ module Instruction = struct
         | 'D' -> D
         | _ -> failwith "invalid direction"
       in
-      { dir; steps; color })
+      { dir; steps })
 end
 
-let instructions = In_channel.input_lines stdin |> List.map ~f:Instruction.of_string
+let lines = In_channel.input_lines stdin
 
 module Coord = struct
   type t = int * int [@@deriving sexp, compare, hash]
 end
 
-let draw_bounds instructions =
-  let grid = Hashtbl.create (module Coord) in
+let points instructions =
+  let grid = Queue.create () in
   let rec execute (x, y) instructions =
     match instructions with
     | [] -> grid
     | instr :: rest ->
-      Hashtbl.set grid ~key:(x, y) ~data:();
-      (match Instruction.move instr (x, y) with
-       | None -> execute (x, y) rest
-       | Some (c, instr) -> execute c (instr :: rest))
+      let next =
+        match Instruction.dir instr with
+        | R -> (x, y + instr.steps)
+        | L -> (x, y - instr.steps)
+        | U -> (x - instr.steps, y)
+        | D -> (x + instr.steps, y)
+      in
+      Queue.enqueue grid next;
+      execute next rest
   in
-  execute (0, 0) instructions
+  execute (0, 0) instructions |> Queue.to_list
 
-let print_arr a =
-  Array.iter a ~f:(fun row ->
-    Array.iter row ~f:(fun c -> printf "%c" c);
-    printf "\n");
-  printf "\n"
-
-let flood_fill grid =
-  let rows = Array.length grid in
-  let cols = Array.length grid.(0) in
-  let rec fill (x, y) =
-    if x < 0 || x >= rows || y < 0 || y >= cols
-    then ()
-    else if Char.(grid.(x).(y) = '.')
-    then (
-      grid.(x).(y) <- '#';
-      fill (x + 1, y);
-      fill (x - 1, y);
-      fill (x, y + 1);
-      fill (x, y - 1))
+let shoelace_area vertices =
+  let n = Array.length vertices in
+  let rec aux acc i =
+    if i = n
+    then acc / 2
+    else (
+      let x1, y1 = vertices.(i) in
+      let x2, y2 = vertices.((i + 1) % n) in
+      let n = (x1 * y2) - (x2 * y1) in
+      aux (acc + n) (i + 1))
   in
-  fill (0, 0)
+  abs (aux 0 0)
+
+let solve instructions =
+  let points = points instructions in
+  let perimeter = instructions |> List.sum (module Int) ~f:Instruction.steps in
+  let area = shoelace_area (Array.of_list points) in
+  1 + (perimeter / 2) + area
 
 let () =
-  let tbl = draw_bounds instructions in
-  let keys = tbl |> Hashtbl.keys in
-  let min_x, max_x, min_y, max_y =
-    List.fold
-      keys
-      ~init:(Int.max_value, Int.min_value, Int.max_value, Int.min_value)
-      ~f:(fun (min_x, max_x, min_y, max_y) (x, y) ->
-        (min min_x x, max max_x x, min min_y y, max max_y y))
-  in
-  (* shift x to 0 based *)
-  let scale_x x = 1 + x - min_x in
-  let scale_y y = 1 + y - min_y in
-  let arr = Array.make_matrix ~dimx:(scale_x max_x + 2) ~dimy:(scale_y max_y + 2) '.' in
-  keys |> List.iter ~f:(fun (x, y) -> arr.(scale_x x).(scale_y y) <- '#');
-  flood_fill arr;
-  let empty = Array.sum (module Int) arr ~f:(Array.count ~f:(Char.equal '.')) in
-  let walls = keys |> List.length in
-  empty + walls |> printf "%d\n"
+  let part1 = List.map lines ~f:Instruction.of_string in
+  let part2 = List.map lines ~f:Instruction.of_string_p2 in
+  solve part1 |> printf "%d\n";
+  solve part2 |> printf "%d\n"
