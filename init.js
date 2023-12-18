@@ -11,7 +11,7 @@ const input = await fetch(`https://adventofcode.com/2023/day/${day}/input`, {
 
 const dunefile = `(executable
  (name solution)
- (preprocess (pps ppx_deriving.show ppx_sexp_conv))
+ (preprocess (pps ppx_deriving.show ppx_jane))
  (libraries str base stdio parsexp))
 
 (env
