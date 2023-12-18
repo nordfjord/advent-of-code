@@ -16,32 +16,55 @@ module Instruction = struct
   let dir t = t.dir
   let steps t = t.steps
 
-  let of_string_p2 s =
-    let i = String.index_exn s '(' in
-    let j = String.index_exn s ')' in
-    let n = String.subo s ~pos:(i + 2) ~len:(j - i - 3) in
-    let n = Int.of_string @@ "0x" ^ n in
+  module Parse = struct
+    open Angstrom
+
     let dir =
-      match s.[String.length s - 2] with
-      | '0' -> R
-      | '1' -> D
-      | '2' -> L
-      | '3' -> U
-      | _ -> failwith "invalid direction"
-    in
-    { dir; steps = n }
+      choice
+        [ char 'R' *> return R
+        ; char 'L' *> return L
+        ; char 'U' *> return U
+        ; char 'D' *> return D
+        ]
+
+    let ws =
+      skip_while (function
+        | ' ' -> true
+        | _ -> false)
+
+    let int =
+      take_while1 (function
+        | '0' .. '9' -> true
+        | _ -> false)
+      >>| Int.of_string
+
+    let part1 =
+      let* dir = dir <* ws in
+      let* steps = int in
+      return { dir; steps }
+
+    let hex_steps = take 5 >>| fun s -> Int.of_string @@ "0x" ^ s
+
+    let dir =
+      choice
+        [ char '0' *> return R
+        ; char '1' *> return D
+        ; char '2' *> return L
+        ; char '3' *> return U
+        ]
+
+    let part2 =
+      let* _ = take_till (Char.equal '#') *> char '#' in
+      let* steps = hex_steps in
+      let* dir = dir in
+      return { dir; steps }
+  end
+
+  let of_string_p2 s =
+    Angstrom.parse_string ~consume:Prefix Parse.part2 s |> Result.ok_or_failwith
 
   let of_string s =
-    Stdlib.Scanf.sscanf s "%c %d %s" (fun dir steps _color ->
-      let dir =
-        match dir with
-        | 'R' -> R
-        | 'L' -> L
-        | 'U' -> U
-        | 'D' -> D
-        | _ -> failwith "invalid direction"
-      in
-      { dir; steps })
+    Angstrom.parse_string ~consume:Prefix Parse.part1 s |> Result.ok_or_failwith
 end
 
 let lines = In_channel.input_lines stdin
