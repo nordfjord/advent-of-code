@@ -2,10 +2,11 @@ import fs from 'fs/promises'
 import { exec } from 'child_process'
 
 const day = process.argv[2]
+const year = process.argv[3] || '2023'
 
 const cookie = await fs.readFile('./cookie.txt', 'utf-8')
 
-const input = await fetch(`https://adventofcode.com/2023/day/${day}/input`, {
+const input = await fetch(`https://adventofcode.com/${year}/day/${day}/input`, {
   headers: { cookie },
 }).then((res) => res.text())
 
@@ -31,14 +32,14 @@ let () =
 
 const day_ = day.padStart(2, '0')
 
-if (!(await fs.stat(`./2023/${day_}`).catch(() => false))) {
-  await fs.mkdir(`./2023/${day_}`)
+if (!(await fs.stat(`./${year}/${day_}`).catch(() => false))) {
+  await fs.mkdir(`./${year}/${day_}`)
 }
 
 await Promise.all([
-  fs.writeFile(`./2023/${day_}/dune`, dunefile),
-  fs.writeFile(`./2023/${day_}/solution.ml`, solutionfile),
-  fs.writeFile(`./2023/${day_}/input.txt`, input.trim()),
+  fs.writeFile(`./${year}/${day_}/dune`, dunefile),
+  fs.writeFile(`./${year}/${day_}/solution.ml`, solutionfile),
+  fs.writeFile(`./${year}/${day_}/input.txt`, input.trim()),
 ])
 
 await exec('dune build', {
