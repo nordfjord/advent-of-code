@@ -41,10 +41,10 @@ module Parse = struct
 
   let attr =
     choice
-      [ string "x" *> return `x
-      ; string "m" *> return `m
-      ; string "a" *> return `a
-      ; string "s" *> return `s
+      [ char 'x' *> return `x
+      ; char 'm' *> return `m
+      ; char 'a' *> return `a
+      ; char 's' *> return `s
       ]
 
   let direct_rule =
@@ -143,40 +143,48 @@ module PartRange = struct
   let make initial = { x = initial; m = initial; a = initial; s = initial }
 end
 
-let rec run_rules count rules range =
+let rec run_rules rules range =
   match rules with
   | [] -> failwith "no rules"
-  | Direct x :: _ -> count + find_acceptable_ranges workflows x range
+  | Direct x :: _ -> find_acceptable_ranges workflows x range
   | Rule rule :: rules ->
     let min, max = PartRange.get rule.attr range in
     (match rule.op with
      | Lt when max <= rule.value ->
        (* Full match *)
-       count + find_acceptable_ranges workflows rule.next range
+       find_acceptable_ranges workflows rule.next range
      | Lt when min < rule.value ->
        (* Partial match
           if value = 2000; max = 4000; min = 1000
           then we want to match 1000-2000 (ranges are exclusive)
           and run the next rule on 2001-4000
        *)
-       let matched = PartRange.set rule.attr (min, rule.value) range in
-       let new_count = count + find_acceptable_ranges workflows rule.next matched in
-       let unmatched = PartRange.set rule.attr (rule.value, max) range in
-       run_rules new_count rules unmatched
+       let matched =
+         PartRange.set rule.attr (min, rule.value) range
+         |> find_acceptable_ranges workflows rule.next
+       in
+       let unmatched =
+         PartRange.set rule.attr (rule.value, max) range |> run_rules rules
+       in
+       matched + unmatched
      | Gt when min > rule.value ->
        (* Full match *)
-       count + find_acceptable_ranges workflows rule.next range
+       find_acceptable_ranges workflows rule.next range
      | Gt when max > rule.value + 1 ->
        (* Partial match
           if value = 2000; max = 4000; min = 1000
           then we want to match 2001-4000
           and run the next rule on 1000-2000
        *)
-       let matched = PartRange.set rule.attr (rule.value + 1, max) range in
-       let new_count = count + find_acceptable_ranges workflows rule.next matched in
-       let unmatched = PartRange.set rule.attr (min, rule.value + 1) range in
-       run_rules new_count rules unmatched
-     | _ -> run_rules count rules range)
+       let matched =
+         PartRange.set rule.attr (rule.value + 1, max) range
+         |> find_acceptable_ranges workflows rule.next
+       in
+       let unmatched =
+         PartRange.set rule.attr (min, rule.value + 1) range |> run_rules rules
+       in
+       matched + unmatched
+     | _ -> run_rules rules range)
 
 and find_acceptable_ranges workflows id range =
   match id with
@@ -184,7 +192,7 @@ and find_acceptable_ranges workflows id range =
   | "R" -> 0
   | id ->
     let rules = Map.find_exn workflows id in
-    run_rules 0 rules range
+    run_rules rules range
 
 let () =
   (* range end is exclusive *)
