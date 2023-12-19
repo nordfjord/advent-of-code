@@ -1,0 +1,9 @@
+(executable
+ (name solution)
+ (libraries str base stdio angstrom bitstring)
+ (preprocess (pps ppx_deriving.show ppx_jane ppx_bitstring)))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A))))
