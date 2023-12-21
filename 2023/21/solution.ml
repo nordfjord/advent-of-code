@@ -28,37 +28,17 @@ let solve resolve start =
       printf "f(%d) = %d\n%!" (i / rows) (Hash_set.length result));
     result)
   |> ignore;
-  points |> Hashtbl.to_alist
+  points
+  |> Hashtbl.to_alist
+  |> List.sort ~compare:(fun (x0, _) (x1, _) -> Int.compare x0 x1)
+  |> List.map ~f:snd
+  |> function
+  | [ a; b; c ] -> (a, b, c)
+  | _ -> failwith "bad"
 
 let mean fa =
   let open Float in
   Array.reduce_exn fa ~f:( + ) / of_int (Array.length fa)
-
-let regression xs ys =
-  let open Float in
-  let xm = mean xs in
-  let ym = mean ys in
-  let x2m = Array.map xs ~f:(fun x -> x * x) |> mean in
-  let x3m = Array.map xs ~f:(fun x -> x * x * x) |> mean in
-  let x4m =
-    Array.map xs ~f:(fun x ->
-      let x2 = x * x in
-      x2 * x2)
-    |> mean
-  in
-  let xzipy = Array.zip_exn xs ys in
-  let xym = Array.map xzipy ~f:(fun (x, y) -> x * y) |> mean in
-  let x2ym = Array.map xzipy ~f:(fun (x, y) -> x * x * y) |> mean in
-  let sxx = x2m - (xm * xm) in
-  let sxy = xym - (xm * ym) in
-  let sxx2 = x3m - (xm * x2m) in
-  let sx2x2 = x4m - (x2m * x2m) in
-  let sx2y = x2ym - (x2m * ym) in
-  let b = ((sxy * sx2x2) - (sx2y * sxx2)) / ((sxx * sx2x2) - (sxx2 * sxx2)) in
-  let c = ((sx2y * sxx) - (sxy * sxx2)) / ((sxx * sx2x2) - (sxx2 * sxx2)) in
-  let a = ym - (b * xm) - (c * x2m) in
-  let to_int f = Int.of_float (Float.round f) in
-  (to_int a, to_int b, to_int c)
 
 let () =
   (* this is only possible because we start in the center of a square grid
@@ -66,19 +46,25 @@ let () =
      Futher, the fact that 26501365 is 202300 * 131 + 65 is also important
      This math wouldn't math in a lot of other circumstances
   *)
-  let x = (26501365 - 65) / 131 in
   let resolve (x, y) =
     match grid.(x % rows).(y % cols) with
     | '.' | 'S' -> Some (x, y)
     | _ -> None
   in
-  let points = solve resolve start in
-  let xs, ys = List.unzip points in
-  let a, b, c =
-    regression
-      (Array.of_list @@ List.map xs ~f:Int.to_float)
-      (Array.of_list @@ List.map ys ~f:Int.to_float)
-  in
-  let f x = a + (b * x) + (c * x * x) in
-  printf "f(x) = %dx^2 + %dx + %dx\n" c b a;
+  let f0, f1, f2 = solve resolve start in
+  (*
+     the polynomial is of the form:
+     f(x) = ax^2 + bx + c
+     we know the value of f(0), f(1), and f(2)
+     as such we can solve
+     c = f(0),
+     a = (f(2) + c - (2 * f(1))) / 2,
+     b = f(1) - c - a
+  *)
+  let c = f0 in
+  let a = (f2 + (c - (2 * f1))) / 2 in
+  let b = f1 - c - a in
+  let f x = (a * x * x) + (b * x) + c in
+  let x = (26501365 - 65) / 131 in
+  printf "f(x) = %dx^2 + %dx + %d\n" a b c;
   printf "f(%d) = %d\n" x (f x)
