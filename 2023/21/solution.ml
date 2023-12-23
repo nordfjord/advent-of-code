@@ -57,9 +57,20 @@ let () =
      f(x) = ax^2 + bx + c
      we know the value of f(0), f(1), and f(2)
      as such we can solve
-     c = f(0),
-     a = (f(2) + c - (2 * f(1))) / 2,
+     f(0) = 0x^2 + 0x + c = c
+     f(1) = a + b + c
+     f(2) = 4a + 2b + c
+
+     c = f(0)
+
+     a = (f(2) + c - (2 * f(1))) / 2
+     = (4a + 2b + 2c - ((2a + 2b + 2c))) / 2
+     = 2a / 2
+     = a
+
      b = f(1) - c - a
+     = (a + b + c) - c - a
+     = b
   *)
   let c = f0 in
   let a = (f2 + (c - (2 * f1))) / 2 in
