@@ -88,7 +88,10 @@ let () =
 let () =
   let open Z3 in
   let ctx = mk_context [] in
-  let mk_int_c x = Arithmetic.Integer.mk_numeral_i ctx x in
+  let ( + ) a b = Arithmetic.mk_add ctx [ a; b ] in
+  let ( * ) a b = Arithmetic.mk_mul ctx [ a; b ] in
+  let ( = ) a b = Boolean.mk_eq ctx a b in
+  let of_int x = Arithmetic.Integer.mk_numeral_i ctx x in
   let mk_int name = Arithmetic.Integer.mk_const_s ctx name in
   let x = mk_int "x" in
   let y = mk_int "y" in
@@ -99,15 +102,12 @@ let () =
   let solver = Solver.mk_solver ctx None in
   List.iteri points ~f:(fun i { point = xi, yi, zi; direction = vxi, vyi, vzi } ->
     let t = mk_int (Printf.sprintf "t%d" i) in
-    let mk_formula x vx xi vxi =
-      Boolean.mk_eq
-        ctx
-        (Arithmetic.mk_add ctx [ x; Arithmetic.mk_mul ctx [ t; vx ] ])
-        (Arithmetic.mk_add ctx [ mk_int_c xi; Arithmetic.mk_mul ctx [ t; mk_int_c vxi ] ])
-    in
     Solver.add
       solver
-      [ mk_formula x vx xi vxi; mk_formula y vy yi vyi; mk_formula z vz zi vzi ]);
+      [ x + (t * vx) = of_int xi + (t * of_int vxi)
+      ; y + (t * vy) = of_int yi + (t * of_int vyi)
+      ; z + (t * vz) = of_int zi + (t * of_int vzi)
+      ]);
   let _ = Solver.check solver [] in
   let model = Solver.get_model solver |> Option.value_exn in
   let sum = Arithmetic.mk_add ctx [ x; y; z ] in
