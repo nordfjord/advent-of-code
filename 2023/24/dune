@@ -1,7 +1,7 @@
 (executable
  (name solution)
  (preprocess (pps ppx_deriving.show ppx_jane))
- (libraries str base stdio parsexp unix angstrom))
+ (libraries str base stdio parsexp unix z3))
 
 (env
  (dev
