@@ -1,4 +1,5 @@
-open Core
+open Base
+open Stdio
 
 let lines = Stdio.In_channel.input_lines Stdio.In_channel.stdin
 
@@ -18,8 +19,7 @@ let parse_line str =
     let last = chars.(Array.length chars - 1) in
     (first * 10) + last)
 
-let part1 () =
-  lines |> List.sum (module Int) ~f:parse_line |> Printf.printf "Part 1: %d\n"
+let part1 () = lines |> List.sum (module Int) ~f:parse_line |> printf "Part 1: %d\n"
 
 let transformations =
   [ ("one", 1)
@@ -56,10 +56,10 @@ let rec parse_line_2 (firstNumber, lastNumber) i str =
        | Some n -> parse_line_2 (firstNumber, n) (i + 1) str))
 
 let part2 () =
-  lines
-  |> List.sum (module Int) ~f:(parse_line_2 (-1, -1) 0)
-  |> Printf.printf "Part 2: %d\n"
+  lines |> List.sum (module Int) ~f:(parse_line_2 (-1, -1) 0) |> printf "Part 2: %d\n"
 
 let () =
+  let time = Unix.gettimeofday () in
   part1 ();
-  part2 ()
+  part2 ();
+  printf "time: %fms\n%!" ((Unix.gettimeofday () -. time) *. 1000.)

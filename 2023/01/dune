@@ -1,6 +1,6 @@
 (executable
  (name solution)
- (libraries str core))
+ (libraries str base stdio unix))
 
 (env
  (dev

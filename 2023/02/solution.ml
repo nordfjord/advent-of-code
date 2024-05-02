@@ -81,5 +81,7 @@ let part2 () =
   |> Printf.printf "Part2: %d\n"
 
 let () =
+  let t = Unix.gettimeofday () in
   part1 ();
-  part2 ()
+  part2 ();
+  Printf.printf "time: %fms\n%!" ((Unix.gettimeofday () -. t) *. 1000.)
