@@ -5,12 +5,9 @@ function p1(input) {
   let m,
     sum = 0
 
-  do {
-    m = regx.exec(input)
-    if (m) {
-      sum += Number(m[1]) * Number(m[2])
-    }
-  } while (m)
+  while ((m = regx.exec(input))) {
+    sum += Number(m[1]) * Number(m[2])
+  }
   return sum
 }
 
