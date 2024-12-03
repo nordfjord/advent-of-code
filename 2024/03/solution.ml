@@ -57,7 +57,7 @@ let lines = In_channel.input_all stdin
 
 let () =
   let exprs =
-    Angstrom.parse_string ~consume:Prefix Parse.parse lines |> Result.ok_or_failwith
+    Result.ok_or_failwith @@ Angstrom.parse_string ~consume:Prefix Parse.parse lines
   in
   let state = List.fold_left exprs ~init:State.initial ~f:State.evolve in
   printf "Part 1: %d\n" state.p1;

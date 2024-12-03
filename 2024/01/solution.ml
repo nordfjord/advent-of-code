@@ -1,23 +1,23 @@
 open Base
 open Stdio
 
+let tuple a b = (a, b)
 let lines = In_channel.input_lines stdin
+let parse = List.map ~f:(fun x -> Stdlib.Scanf.sscanf x "%d %d" tuple)
 
-let parse lines =
-  lines |> List.map ~f:(fun x -> Stdlib.Scanf.sscanf x "%d %d" (fun a b -> (a, b)))
+let incr_opt = function
+  | None -> 1
+  | Some x -> x + 1
 
 let freq_tbl xs =
-  let incr = function
-    | None -> 1
-    | Some x -> x + 1
-  in
   let tbl = Hashtbl.create (module Int) in
-  List.iter xs ~f:(fun x -> Hashtbl.update tbl x ~f:incr);
+  List.iter xs ~f:(Hashtbl.update tbl ~f:incr_opt);
   tbl
 
 let part1 left right =
   List.zip_exn left right
-  |> List.fold_left ~init:0 ~f:(fun sum (a, b) -> sum + abs (a - b))
+  |> List.map ~f:(fun (a, b) -> abs (a - b))
+  |> List.fold_left ~init:0 ~f:( + )
 
 let part2 left right =
   let tbl = freq_tbl right in
@@ -26,10 +26,12 @@ let part2 left right =
     | Some y -> sum + (x * y)
     | None -> sum)
 
+let sort_int_list = List.sort ~compare:Int.compare
+
 let () =
   let xs = parse lines in
   let left, right = List.unzip xs in
-  let left = List.sort ~compare:Int.compare left in
-  let right = List.sort ~compare:Int.compare right in
+  let left = sort_int_list left in
+  let right = sort_int_list right in
   part1 left right |> printf "Part 1: %d\n";
   part2 left right |> printf "Part 2: %d\n"

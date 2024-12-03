@@ -21,28 +21,18 @@ let is_safe = function
     else false
 
 let remove_one xs =
-  let open Sequence in
-  let rec aux acc remaining =
-    match remaining with
-    | [] -> empty
-    | x :: xs ->
-      let ys = lazy (singleton (List.rev_append acc xs)) in
-      append (of_lazy ys) (aux (x :: acc) xs)
-  in
-  aux [] xs
+  Sequence.unfold ~init:([], xs) ~f:(function
+    | _, [] -> None
+    | acc, x :: xs ->
+      let ys = List.rev_append acc xs in
+      Some (ys, (x :: acc, xs)))
 
+let ( >> ) f g x = g (f x)
 let is_safe_with_one_removed nums = nums |> remove_one |> Sequence.exists ~f:is_safe
-
-let part1 rows =
-  List.fold_left rows ~init:0 ~f:(fun sum xs -> sum + Bool.to_int (is_safe xs))
-
-let part2 rows =
-  List.fold_left rows ~init:0 ~f:(fun sum xs ->
-    sum + Bool.to_int (is_safe_with_one_removed xs))
+let part1 rows = rows |> List.sum (module Int) ~f:(is_safe >> Bool.to_int)
+let part2 rows = rows |> List.sum (module Int) ~f:(is_safe_with_one_removed >> Bool.to_int)
 
 let () =
-  let nums =
-    lines |> List.map ~f:(Fn.compose (List.map ~f:Int.of_string) (String.split ~on:' '))
-  in
+  let nums = List.map lines ~f:(String.split ~on:' ' >> List.map ~f:Int.of_string) in
   part1 nums |> printf "Part 1: %d\n";
   part2 nums |> printf "Part 2: %d\n"
