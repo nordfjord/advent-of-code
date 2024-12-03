@@ -20,14 +20,11 @@ function p2(input) {
     sum = 0,
     enabled = true
 
-  do {
-    m = regx.exec(input)
-    if (m) {
-      if (m[0] === "don't()") enabled = false
-      else if (m[0] === 'do()') enabled = true
-      else if (enabled) sum += Number(m[1]) * Number(m[2])
-    }
-  } while (m)
+  while ((m = regx.exec(input))) {
+    if (m[0] === "don't()") enabled = false
+    else if (m[0] === 'do()') enabled = true
+    else if (enabled) sum += Number(m[1]) * Number(m[2])
+  }
   return sum
 }
 
