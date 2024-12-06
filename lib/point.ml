@@ -3,6 +3,7 @@ type t = int * int
 let compare = compare
 let manhattan_distance (x1, y1) (x2, y2) = abs (x1 - x2) + abs (y1 - y2)
 let ( + ) (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+let add = ( + )
 let show (x, y) = Printf.sprintf "(%d, %d)" x y
 let pi = 4.0 *. atan 1.0
 
