@@ -27,9 +27,7 @@ let initial_loc =
 
 let max_x = Array.length lines
 let max_y = String.length lines.(0)
-let move = Point.add
 let is_end (x, y) = x = -1 || x = max_x || y = -1 || y = max_y
-let resolve (x, y) = lines.(x).[y]
 let is_wall (x, y) = Char.equal lines.(x).[y] '#'
 
 let rotate = function
@@ -39,37 +37,37 @@ let rotate = function
   | 0, -1 -> (-1, 0)
   | _ -> failwith "invalid direction"
 
+let move ~is_wall loc dir =
+  let rec aux curr =
+    let next = Point.add curr dir in
+    if is_end next then (loc, next) else if is_wall next then (loc, curr) else aux next
+  in
+  aux loc
+
+let expand ((x1, y1), (x2, y2)) =
+  let x1, x2 = (min x1 x2, max x1 x2) in
+  let y1, y2 = (min y1 y2, max y1 y2) in
+  (if x1 = x2
+   then Sequence.range ~stop:`inclusive y1 y2 |> Sequence.map ~f:(fun y -> (x1, y))
+   else Sequence.range ~stop:`inclusive x1 x2 |> Sequence.map ~f:(fun x -> (x, y1)))
+  |> Sequence.filter ~f:(Fn.non is_end)
+
 let part1 () =
-  let visited = Hash_set.create (module Point) in
+  let visited = Hash_set.create (module Point) ~size:128 in
   Hash_set.add visited initial_loc;
   let rec aux loc dir =
-    let next = move loc dir in
-    if is_end next
-    then ()
-    else if is_wall next
-    then aux loc (rotate dir)
-    else (
-      Hash_set.add visited next;
-      aux next dir)
+    let move = move ~is_wall loc dir in
+    let next = snd move in
+    Sequence.iter (expand move) ~f:(fun x -> Hash_set.add visited x);
+    if is_end next then visited else aux next (rotate dir)
   in
-  aux initial_loc (-1, 0);
-  visited
+  aux initial_loc (-1, 0)
 
 let has_loop obstr =
+  let is_wall_or_obstr x = is_wall x || Point.equal x obstr in
   let moves = Hash_set.create (module Move) in
-  let move loc dir =
-    let rec aux curr =
-      let next = Point.add curr dir in
-      if is_end next
-      then (loc, next)
-      else if is_wall next || Point.equal obstr next
-      then (loc, curr)
-      else aux next
-    in
-    aux loc
-  in
   let rec aux loc dir =
-    let move = move loc dir in
+    let move = move ~is_wall:is_wall_or_obstr loc dir in
     let _, next = move in
     (* We've made this move before, ergo loop *)
     if Hash_set.mem moves move
@@ -82,10 +80,7 @@ let has_loop obstr =
   in
   aux initial_loc (-1, 0)
 
-let part2 path =
-  let obstructions = Hash_set.create (module Point) in
-  Hash_set.iter path ~f:(fun x -> if has_loop x then Hash_set.add obstructions x);
-  Hash_set.length obstructions
+let part2 path = Hash_set.filter path ~f:has_loop |> Hash_set.length
 
 let () =
   let visited = part1 () in
