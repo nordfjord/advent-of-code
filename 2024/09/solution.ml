@@ -81,5 +81,6 @@ let checksum disk =
 
 let () =
   let disk = parse_line line in
-  defrag disk part1 |> checksum |> printf "Part 1: %d\n";
-  defrag disk part2 |> checksum |> printf "Part 2: %d\n"
+  Prelude.Performance.measure "exec" (fun () ->
+    defrag disk part1 |> checksum |> printf "Part 1: %d\n";
+    defrag disk part2 |> checksum |> printf "Part 2: %d\n")

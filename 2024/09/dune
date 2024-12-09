@@ -1,7 +1,14 @@
 (executable
  (name solution)
  (preprocess (pps ppx_deriving.show ppx_jane))
- (libraries str base stdio parsexp))
+ (libraries str base stdio parsexp prelude)
+ (modules solution))
+
+(executable
+ (name simple)
+ (preprocess (pps ppx_deriving.show ppx_jane))
+ (libraries str base stdio parsexp prelude)
+ (modules simple))
 
 (env
  (dev
