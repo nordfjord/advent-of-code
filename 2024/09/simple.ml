@@ -70,8 +70,7 @@ let part2 disk =
     else (
       let start, end' = find_file_range disk i in
       let len = 1 + (end' - start) in
-      let empty_start = find_empty len in
-      match empty_start with
+      match find_empty len with
       | Some empty_start when empty_start < start ->
         Array.fill disk ~pos:empty_start ~len disk.(start);
         Array.fill disk ~pos:start ~len (-1);
