@@ -22,8 +22,8 @@ let in_bounds (x, y) = 0 <= x && x <= max_x && 0 <= y && y <= max_y
 let resolve (x, y) = map.(x).(y)
 
 let moves (x, y) h =
-  [| (x - 1, y); (x + 1, y); (x, y - 1); (x, y + 1) |]
-  |> Array.filter ~f:(fun p -> in_bounds p && resolve p = h + 1)
+  [ (x - 1, y); (x + 1, y); (x, y - 1); (x, y + 1) ]
+  |> List.filter ~f:(fun p -> in_bounds p && resolve p = h + 1)
 
 let part1 (x, y) =
   let q = Queue.create () in
@@ -36,7 +36,7 @@ let part1 (x, y) =
     then Hash_set.add tops point
     else
       moves point height
-      |> Array.iter ~f:(fun p ->
+      |> List.iter ~f:(fun p ->
         let h = resolve p in
         if Hash_set.mem visited p
         then ()
@@ -49,15 +49,15 @@ let part1 (x, y) =
 let part2 (x, y) =
   let q = Queue.create () in
   Queue.enqueue q ((x, y), resolve (x, y), []);
-  let tops = Hash_set.create (module IntIntList) in
+  let paths = Hash_set.create (module IntIntList) in
   let visited = Hash_set.create (module IntIntList) in
   while not (Queue.is_empty q) do
     let point, height, path = Queue.dequeue_exn q in
     if height = 9
-    then Hash_set.add tops path
+    then Hash_set.add paths path
     else
       moves point height
-      |> Array.iter ~f:(fun p ->
+      |> List.iter ~f:(fun p ->
         let next_path = p :: path in
         let h = resolve p in
         if Hash_set.mem visited next_path
@@ -66,7 +66,7 @@ let part2 (x, y) =
           Hash_set.add visited next_path;
           Queue.enqueue q (p, h, next_path)))
   done;
-  Hash_set.length tops
+  Hash_set.length paths
 
 let trailheads =
   let result = ref [] in
