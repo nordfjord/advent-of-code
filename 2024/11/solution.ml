@@ -5,7 +5,7 @@ let set_or_add x = function
   | None -> x
   | Some y -> x + y
 
-let line =
+let input =
   In_channel.input_all stdin
   |> String.split ~on:' '
   |> List.fold
@@ -32,13 +32,13 @@ let blink map =
     transform key |> List.iter ~f:(Hashtbl.update next ~f:(set_or_add count)));
   next
 
-let rec simulate map n =
+let rec simulate n map =
   if n = 0
   then Hashtbl.fold map ~init:0 ~f:(fun ~key:_ ~data sum -> sum + data)
-  else simulate (blink map) (n - 1)
+  else simulate (n - 1) (blink map)
 
 type intlist = int list [@@deriving sexp]
 
 let () =
-  simulate line 25 |> printf "Part 1: %d\n";
-  simulate line 75 |> printf "Part 2: %d\n"
+  simulate 25 input |> printf "Part 1: %d\n";
+  simulate 75 input |> printf "Part 2: %d\n"
