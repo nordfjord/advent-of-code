@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import { exec } from 'child_process'
 
 const day = process.argv[2]
-const year = process.argv[3] || '2024'
+const year = process.argv[3] || '2025'
 
 const cookie = await fs.readFile('./cookie.txt', 'utf-8')
 
