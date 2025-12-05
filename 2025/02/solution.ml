@@ -14,18 +14,18 @@ let parse str =
 let p1_divisors n = if n % 2 = 0 then Sequence.singleton (n / 2) else Sequence.empty
 let divisors n = Sequence.range 1 ((n / 2) + 1) |> Sequence.filter ~f:(fun d -> n % d = 0)
 
+let is_invalid divisors n =
+  let nstr = Int.to_string n in
+  let digits = String.to_list nstr in
+  divisors (String.length nstr)
+  |> Sequence.exists ~f:(fun div ->
+    List.chunks_of ~length:div digits
+    |> List.all_equal ~equal:(List.equal Char.equal)
+    |> Option.is_some)
+
 let solve divisors (lo, hi) =
-  let has_repeat n =
-    let nstr = Int.to_string n in
-    let digits = String.to_list nstr in
-    divisors (String.length nstr)
-    |> Sequence.exists ~f:(fun div ->
-      List.chunks_of ~length:div digits
-      |> List.all_equal ~equal:(List.equal Char.equal)
-      |> Option.is_some)
-  in
   Sequence.range lo (hi + 1)
-  |> Sequence.sum (module Int) ~f:(fun n -> if has_repeat n then n else 0)
+  |> Sequence.sum (module Int) ~f:(fun n -> if is_invalid divisors n then n else 0)
 
 let () =
   let rules = lines |> List.hd_exn |> parse in

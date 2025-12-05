@@ -16,16 +16,21 @@ let () =
       | '@' -> Hash_set.add grid (x, y)
       | _ -> ()))
 
-let moves = [ (1, 1); (1, 0); (1, -1); (0, 1); (0, -1); (-1, 1); (-1, 0); (-1, -1) ]
-let adjacent (x, y) = moves |> List.map ~f:(fun (x2, y2) -> (x + x2, y + y2))
+let adjacent (x, y) =
+  [ (x - 1, y + 1) ;  (x, y + 1) ; (x + 1, y + 1)
+  ; (x - 1, y    ) ;  (*(x, y)*)   (x + 1, y    )
+  ; (x - 1, y - 1) ;  (x, y - 1) ; (x + 1, y - 1)
+  ] [@@ocamlformat "disable"]
 
-let part1 grid =
+let find_removable grid =
   Hash_set.filter grid ~f:(fun coords ->
     adjacent coords |> List.count ~f:(fun coords -> Hash_set.mem grid coords) < 4)
 
+let part1 grid = find_removable grid |> Hash_set.length
+
 let part2 grid =
   let rec aux count grid =
-    let removable = part1 grid in
+    let removable = find_removable grid in
     if Hash_set.length removable = 0
     then count
     else aux (count + Hash_set.length removable) (Hash_set.diff grid removable)
@@ -33,5 +38,5 @@ let part2 grid =
   aux 0 grid
 
 let () =
-  part1 grid |> Hash_set.length |> printf "Part 1: %d\n";
+  part1 grid |> printf "Part 1: %d\n";
   part2 grid |> printf "Part 2: %d\n"
