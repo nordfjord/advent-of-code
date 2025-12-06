@@ -35,9 +35,7 @@ let part2 () =
     (* on end, evaluate current *)
     | [] -> acc + op nums
     (* on empty, evaluate current and reset *)
-    | "" :: rest ->
-      let res = op nums in
-      aux (add, []) rest (acc + res)
+    | "" :: rest -> aux (add, []) rest (acc + op nums)
     | s :: rest when String.contains s '*' -> aux (mul, parse_op_num s :: nums) rest acc
     | s :: rest when String.contains s '+' -> aux (add, parse_op_num s :: nums) rest acc
     | s :: rest -> aux (op, Int.of_string s :: nums) rest acc
