@@ -27,8 +27,7 @@ module Range = struct
   let contains n (lo, hi) = lo <= n && n <= hi
 
   let dedupe ranges =
-    ranges
-    |> List.sort ~compare
+    List.sort ranges ~compare
     |> List.fold ~init:[] ~f:(fun acc r ->
       match acc with
       | [] -> [ r ]

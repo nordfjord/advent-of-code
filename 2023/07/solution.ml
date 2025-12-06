@@ -17,7 +17,6 @@ module Hand = struct
     | c -> int_of_char c - int_of_char '0'
 
   let of_string s = String.to_seq s |> Seq.map of_char |> List.of_seq
-
   let compare = compare
 end
 
