@@ -20,41 +20,25 @@ end
 
 let splitters = Hash_set.of_list (module IntPair) splitters
 let max_y = List.length lines - 1
+let width = String.length (List.hd_exn lines)
 
-let part1 start =
-  let visited = Hash_set.create (module IntPair) in
-  let rec aux (x, y) =
-    if y >= max_y || Hash_set.mem visited (x, y)
-    then 0
-    else (
-      let res =
-        if Hash_set.mem splitters (x, y)
-        then 1 + aux (x - 1, y + 1) + aux (x + 1, y + 1)
-        else aux (x, y + 1)
-      in
-      Hash_set.add visited (x, y);
-      res)
-  in
-  aux start
-
-let part2 start =
-  let memo = Hashtbl.create (module IntPair) in
-  let rec aux (x, y) =
-    match Hashtbl.find memo (x, y) with
-    | Some v -> v
-    | None ->
-      let paths =
-        if y >= max_y
-        then 1
-        else if Hash_set.mem splitters (x, y)
-        then aux (x - 1, y + 1) + aux (x + 1, y + 1)
-        else aux (x, y + 1)
-      in
-      Hashtbl.set memo ~key:(x, y) ~data:paths;
-      paths
-  in
-  aux start
+let solve (x, start_y) =
+  let paths = Array.create ~len:width 0 in
+  let splits = ref 0 in
+  paths.(x) <- 1;
+  for y = start_y to max_y do
+    for x = 0 to width - 1 do
+      if paths.(x) > 0 && Hash_set.mem splitters (x, y)
+      then (
+        Int.incr splits;
+        paths.(x - 1) <- paths.(x - 1) + paths.(x);
+        paths.(x + 1) <- paths.(x + 1) + paths.(x);
+        paths.(x) <- 0)
+    done
+  done;
+  (!splits, Array.fold paths ~init:0 ~f:( + ))
 
 let () =
-  part1 start |> printf "Part 1: %d\n";
-  part2 start |> printf "Part 2: %d\n"
+  let p1, p2 = solve start in
+  printf "Part 1: %d\n" p1;
+  printf "Part 2: %d\n" p2
