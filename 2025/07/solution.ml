@@ -37,7 +37,7 @@ let part1 start =
   in
   aux start
 
-let dfs start =
+let part2 start =
   let memo = Hashtbl.create (module IntPair) in
   let rec aux (x, y) =
     if y >= max_y
@@ -58,4 +58,4 @@ let dfs start =
 
 let () =
   part1 start |> printf "Part 1: %d\n";
-  dfs start |> printf "Part 2: %d\n"
+  part2 start |> printf "Part 2: %d\n"
