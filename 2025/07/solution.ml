@@ -40,19 +40,18 @@ let part1 start =
 let part2 start =
   let memo = Hashtbl.create (module IntPair) in
   let rec aux (x, y) =
-    if y >= max_y
-    then 1
-    else (
-      match Hashtbl.find memo (x, y) with
-      | Some v -> v
-      | None ->
-        let paths =
-          if Hash_set.mem splitters (x, y)
-          then aux (x - 1, y + 1) + aux (x + 1, y + 1)
-          else aux (x, y + 1)
-        in
-        Hashtbl.set memo ~key:(x, y) ~data:paths;
-        paths)
+    match Hashtbl.find memo (x, y) with
+    | Some v -> v
+    | None ->
+      let paths =
+        if y >= max_y
+        then 1
+        else if Hash_set.mem splitters (x, y)
+        then aux (x - 1, y + 1) + aux (x + 1, y + 1)
+        else aux (x, y + 1)
+      in
+      Hashtbl.set memo ~key:(x, y) ~data:paths;
+      paths
   in
   aux start
 
