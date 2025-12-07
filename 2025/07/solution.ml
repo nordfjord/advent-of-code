@@ -46,13 +46,13 @@ let part2 start =
       match Hashtbl.find memo (x, y) with
       | Some v -> v
       | None ->
-        let neighbors =
+        let paths =
           if Hash_set.mem splitters (x, y)
           then aux (x - 1, y + 1) + aux (x + 1, y + 1)
           else aux (x, y + 1)
         in
-        Hashtbl.set memo ~key:(x, y) ~data:neighbors;
-        neighbors)
+        Hashtbl.set memo ~key:(x, y) ~data:paths;
+        paths)
   in
   aux start
 
