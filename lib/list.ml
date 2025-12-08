@@ -6,7 +6,7 @@ let rec pairwise = function
 
 let rec last = function
   | [] -> raise Not_found
-  | [x] -> x
+  | [ x ] -> x
   | _ :: xs -> last xs
 
 let rec take n = function
@@ -24,9 +24,8 @@ let rec at n = function
   | x :: _ when n = 0 -> x
   | _ :: xs -> at (n - 1) xs
 
-let sum l = fold_left (+) 0 l
-let sum_float l = fold_left (+.) 0. l
-
+let sum l = fold_left ( + ) 0 l
+let sum_float l = fold_left ( +. ) 0. l
 
 let index_of item l =
   let rec inner l i =

@@ -7,9 +7,7 @@ module Point3D = struct
   let scorep2 (x1, _, _) (x2, _, _) = x1 * x2
 
   let distance (x1, y1, z1) (x2, y2, z2) =
-    Float.sqrt
-      (Float.of_int
-         (((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2))))
+    ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2))
 end
 
 let boxes =
@@ -27,6 +25,11 @@ let all_pairs lst =
       aux (new_pairs @ acc) xs
   in
   aux [] lst
+
+let distances =
+  all_pairs boxes
+  |> List.sort ~compare:(fun (b1, b2) (b3, b4) ->
+    Int.compare (Point3D.distance b1 b2) (Point3D.distance b3 b4))
 
 let enumerate_subgraphs graph =
   let visited = Hash_set.create (module Point3D) in
@@ -72,11 +75,6 @@ let part2 boxes distances =
       is_fully_connected graph boxes)
   in
   Point3D.scorep2 p1 p2
-
-let distances =
-  all_pairs boxes
-  |> List.sort ~compare:(fun (b1, b2) (b3, b4) ->
-    Float.compare (Point3D.distance b1 b2) (Point3D.distance b3 b4))
 
 let () =
   part1 distances |> printf "Part 1: %d\n";

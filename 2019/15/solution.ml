@@ -25,11 +25,6 @@ let robot program =
   in
   fun inp -> get_next (Some inp)
 
-let rec chunk size (seq : 'a Seq.t) () =
-  match seq () with
-  | Seq.Nil -> Seq.Nil
-  | Seq.Cons (x, xs) -> Seq.Cons (Seq.cons x (Seq.take (size - 1) xs), chunk size seq)
-
 let up = (1, 0)
 let down = (-1, 0)
 let left = (0, -1)
@@ -51,16 +46,8 @@ type tile =
 
 let get_tile m t = Hashtbl.find_opt m t |> Option.value ~default:Unknown
 
-let possible_moves map loc =
-  [ 1; 2; 3; 4 ]
-  |> List.filter (fun l ->
-    let l = Point.(loc + direction_vector l) in
-    match get_tile map l with
-    | Unknown | OxygenSystem | Floor -> true
-    | _ -> false)
-
 let path_to_location path =
-  path |> List.fold_left (fun loc d -> Point.(loc + direction_vector d)) (0, 0)
+  path |> List.fold_left ~f:(fun loc d -> Point.(loc + direction_vector d)) ~init:(0, 0)
 
 let bfs map =
   let q = Queue.create () in
@@ -75,9 +62,9 @@ let bfs map =
     then result := path
     else
       [ 1; 2; 3; 4 ]
-      |> List.iter (fun d ->
+      |> List.iter ~f:(fun d ->
         let robot = robot (get_program input) in
-        path |> List.iter (fun d -> robot d |> ignore);
+        path |> List.iter ~f:(fun d -> robot d |> ignore);
         let result = robot d in
         let loc = Point.(location + direction_vector d) in
         if Hashtbl.mem map loc
@@ -122,7 +109,7 @@ let bfs map start =
     let location, minutes = Queue.take q in
     result := max minutes !result;
     [ up; down; left; right ]
-    |> List.iter (fun d ->
+    |> List.iter ~f:(fun d ->
       let loc = Point.(location + d) in
       if Hashtbl.mem visited loc
       then ()
