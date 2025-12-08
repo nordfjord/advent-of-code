@@ -16,66 +16,96 @@ let boxes =
     match String.split line ~on:',' |> List.map ~f:Int.of_string with
     | [ x; y; z ] -> (x, y, z)
     | _ -> failwith "invalid input")
+  |> Array.of_list
+
+let box_id b =
+  let rec aux i =
+    if i >= Array.length boxes
+    then failwith "box not found"
+    else if Point3D.compare boxes.(i) b = 0
+    then i
+    else aux (i + 1)
+  in
+  aux 0
 
 let all_pairs lst =
-  let rec aux acc = function
-    | [] -> acc
-    | x :: xs ->
-      let new_pairs = List.map xs ~f:(fun y -> (x, y)) in
-      aux (new_pairs @ acc) xs
-  in
-  aux [] lst
+  Sequence.range 0 (Array.length lst - 1)
+  |> Sequence.concat_map ~f:(fun i ->
+    Sequence.range (i + 1) (Array.length lst - 1)
+    |> Sequence.map ~f:(fun j -> (lst.(i), lst.(j))))
+  |> Sequence.to_list
 
 let distances =
   all_pairs boxes
   |> List.sort ~compare:(fun (b1, b2) (b3, b4) ->
     Int.compare (Point3D.distance b1 b2) (Point3D.distance b3 b4))
+  |> List.map ~f:(fun (p1, p2) -> (box_id p1, box_id p2))
 
-let enumerate_subgraphs graph =
-  let visited = Hash_set.create (module Point3D) in
-  let subgraphs = ref [] in
-  Hashtbl.iter_keys graph ~f:(fun node ->
-    if not (Hash_set.mem visited node)
+module DSU = struct
+  type t =
+    { parents : int array
+    ; size : int array
+    }
+
+  let make_set n = { parents = Array.init n ~f:Fn.id; size = Array.create ~len:n 1 }
+
+  (* A common gotcha is forgetting to check if elements are already in the same set
+   before attempting a union, leading to unnecessary operations. *)
+
+  let find ds element =
+    let rec aux current =
+      let root = ds.parents.(current) in
+      if root <> current
+      then (
+        let root = aux root in
+        ds.parents.(current) <- root;
+        root)
+      else current
+    in
+    aux element
+
+  let size ds element =
+    let rep = find ds element in
+    ds.size.(rep)
+
+  let roots ds =
+    Array.foldi ds.parents ~init:[] ~f:(fun i acc parent ->
+      if i = parent then i :: acc else acc)
+
+  let union ds elem1 elem2 =
+    let irep = find ds elem1 in
+    let jrep = find ds elem2 in
+    if irep <> jrep
     then (
-      let current_subgraph = Hash_set.create (module Point3D) in
-      let rec dfs n =
-        if not (Hash_set.mem visited n)
-        then (
-          Hash_set.add visited n;
-          Hash_set.add current_subgraph n;
-          let neighbors = Hashtbl.find_multi graph n in
-          List.iter neighbors ~f:dfs)
-      in
-      dfs node;
-      subgraphs := current_subgraph :: !subgraphs));
-  !subgraphs
+      let isize = ds.size.(irep) in
+      let jsize = ds.size.(jrep) in
+      if isize < jsize
+      then (
+        ds.parents.(irep) <- jrep;
+        ds.size.(jrep) <- ds.size.(jrep) + isize)
+      else (
+        ds.parents.(jrep) <- irep;
+        ds.size.(irep) <- ds.size.(irep) + jsize))
+end
 
-let connect graph (p1, p2) =
-  Hashtbl.add_multi graph ~key:p1 ~data:p2;
-  Hashtbl.add_multi graph ~key:p2 ~data:p1
+let part1 dists =
+  let dsu = DSU.make_set 1000 in
+  Sequence.of_list dists
+  |> Fn.flip Sequence.take 1000
+  |> Sequence.iter ~f:(fun (i1, i2) -> DSU.union dsu i1 i2);
+  let sizes = DSU.roots dsu |> List.map ~f:(DSU.size dsu) |> Array.of_list in
+  Array.sort sizes ~compare:(fun a b -> -Int.compare a b);
+  sizes.(0) * sizes.(1) * sizes.(2)
 
-let part1 distances =
-  let graph = Hashtbl.create (module Point3D) in
-  List.take distances 1000 |> List.iter ~f:(connect graph);
-  let circuits = enumerate_subgraphs graph in
-  circuits
-  |> List.map ~f:Hash_set.length
-  |> List.sort ~compare:(fun a b -> -Int.compare a b)
-  |> Fn.flip List.take 3
-  |> List.fold ~init:1 ~f:( * )
-
-let is_fully_connected graph nodes =
-  List.for_all nodes ~f:(fun n -> Hashtbl.find_multi graph n |> Fn.non List.is_empty)
-
-let part2 boxes distances =
-  let graph = Hashtbl.create (module Point3D) in
+let part2 distances =
+  let dsu = DSU.make_set 1000 in
   let p1, p2 =
-    List.find_exn distances ~f:(fun (p1, p2) ->
-      connect graph (p1, p2);
-      is_fully_connected graph boxes)
+    List.find_exn distances ~f:(fun (i1, i2) ->
+      DSU.union dsu i1 i2;
+      DSU.size dsu i1 = 999)
   in
-  Point3D.scorep2 p1 p2
+  Point3D.scorep2 boxes.(p1) boxes.(p2)
 
 let () =
   part1 distances |> printf "Part 1: %d\n";
-  part2 boxes distances |> printf "Part 2: %d\n"
+  part2 distances |> printf "Part 2: %d\n"
