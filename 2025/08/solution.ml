@@ -47,10 +47,7 @@ module DSU = struct
     ; size : int array
     }
 
-  let make_set n = { parents = Array.init n ~f:Fn.id; size = Array.create ~len:n 1 }
-
-  (* A common gotcha is forgetting to check if elements are already in the same set
-   before attempting a union, leading to unnecessary operations. *)
+  let create n = { parents = Array.init n ~f:Fn.id; size = Array.create ~len:n 1 }
 
   let find ds element =
     let rec aux current =
@@ -89,7 +86,7 @@ module DSU = struct
 end
 
 let part1 dists =
-  let dsu = DSU.make_set 1000 in
+  let dsu = DSU.create 1000 in
   Sequence.of_list dists
   |> Fn.flip Sequence.take 1000
   |> Sequence.iter ~f:(fun (i1, i2) -> DSU.union dsu i1 i2);
@@ -98,7 +95,7 @@ let part1 dists =
   sizes.(0) * sizes.(1) * sizes.(2)
 
 let part2 distances =
-  let dsu = DSU.make_set 1000 in
+  let dsu = DSU.create 1000 in
   let p1, p2 =
     List.find_exn distances ~f:(fun (i1, i2) ->
       DSU.union dsu i1 i2;
