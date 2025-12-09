@@ -39,7 +39,7 @@ let all_pairs list =
   done;
   !result
 
-let distances =
+let edges =
   all_pairs boxes
   |> List.sort ~compare:Point3D.distance_compare
   |> List.map ~f:(fun (p1, p2) -> (box_id p1, box_id p2))
@@ -64,13 +64,8 @@ module DSU = struct
     in
     aux element
 
-  let size ds element =
-    let rep = find ds element in
-    ds.size.(rep)
-
-  let roots ds =
-    Array.foldi ds.parents ~init:[] ~f:(fun i acc parent ->
-      if i = parent then i :: acc else acc)
+  let size ds element = ds.size.(find ds element)
+  let roots ds = Array.filteri ds.parents ~f:( = )
 
   let union ds elem1 elem2 =
     let irep = find ds elem1 in
@@ -82,30 +77,28 @@ module DSU = struct
       if isize < jsize
       then (
         ds.parents.(irep) <- jrep;
-        ds.size.(jrep) <- ds.size.(jrep) + isize)
+        ds.size.(jrep) <- isize + jsize)
       else (
         ds.parents.(jrep) <- irep;
-        ds.size.(irep) <- ds.size.(irep) + jsize))
+        ds.size.(irep) <- isize + jsize))
 end
 
-let part1 dists =
+let part1 edges =
   let dsu = DSU.create (Array.length boxes) in
-  Sequence.of_list dists
-  |> Fn.flip Sequence.take (Array.length boxes)
-  |> Sequence.iter ~f:(fun (i1, i2) -> DSU.union dsu i1 i2);
-  let sizes = DSU.roots dsu |> List.map ~f:(DSU.size dsu) |> Array.of_list in
+  List.take edges 1000 |> List.iter ~f:(fun (i1, i2) -> DSU.union dsu i1 i2);
+  let sizes = DSU.roots dsu |> Array.map ~f:(DSU.size dsu) in
   Array.sort sizes ~compare:(fun a b -> -Int.compare a b);
   sizes.(0) * sizes.(1) * sizes.(2)
 
-let part2 distances =
+let part2 edges =
   let dsu = DSU.create (Array.length boxes) in
   let p1, p2 =
-    List.find_exn distances ~f:(fun (i1, i2) ->
+    List.find_exn edges ~f:(fun (i1, i2) ->
       DSU.union dsu i1 i2;
       DSU.size dsu i1 = Array.length boxes)
   in
   Point3D.scorep2 boxes.(p1) boxes.(p2)
 
 let () =
-  part1 distances |> printf "Part 1: %d\n";
-  part2 distances |> printf "Part 2: %d\n"
+  part1 edges |> printf "Part 1: %d\n";
+  part2 edges |> printf "Part 2: %d\n"
