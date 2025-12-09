@@ -13,7 +13,7 @@ const input = await fetch(`https://adventofcode.com/${year}/day/${day}/input`, {
 const dunefile = `(executable
  (name solution)
  (preprocess (pps ppx_deriving.show ppx_jane))
- (libraries str base stdio parsexp))
+ (libraries str base stdio parsexp prelude))
 
 (env
  (dev
@@ -26,8 +26,10 @@ open Stdio
 
 let lines = In_channel.input_lines stdin
 
-let () =
-  lines |> List.length |> printf "%d\\n"
+let part1 () = 0
+let part2 () = 0
+
+let () = Prelude.Runner.run part1 part2
 `
 
 const day_ = day.padStart(2, '0')

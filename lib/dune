@@ -1,3 +1,3 @@
 (library
  (name prelude)
- (libraries unix str))
+ (libraries unix str base stdio time_now))

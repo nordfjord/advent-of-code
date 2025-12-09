@@ -41,7 +41,7 @@ let simulate_p2 rotations =
   in
   aux 0 50 rotations
 
-let () =
-  let instr = lines |> List.map ~f:parse_line in
-  instr |> simulate |> printf "Part 1: %d\n";
-  instr |> simulate_p2 |> printf "Part 2: %d\n"
+let instr = lines |> List.map ~f:parse_line
+let part1 () = simulate instr
+let part2 () = simulate_p2 instr
+let () = Prelude.Runner.run part1 part2
