@@ -2,12 +2,14 @@ open Base
 open Stdio
 
 module Point3D = struct
-  type t = int * int * int [@@deriving compare, sexp, hash]
+  type t = int * int * int [@@deriving compare, sexp, hash, show, equal]
 
   let scorep2 (x1, _, _) (x2, _, _) = x1 * x2
 
   let distance (x1, y1, z1) (x2, y2, z2) =
     ((x1 - x2) * (x1 - x2)) + ((y1 - y2) * (y1 - y2)) + ((z1 - z2) * (z1 - z2))
+
+  let distance_compare (p1, p2) (p3, p4) = Int.compare (distance p1 p2) (distance p3 p4)
 end
 
 let boxes =
@@ -28,17 +30,18 @@ let box_id b =
   in
   aux 0
 
-let all_pairs lst =
-  Sequence.range 0 (Array.length lst - 1)
-  |> Sequence.concat_map ~f:(fun i ->
-    Sequence.range (i + 1) (Array.length lst - 1)
-    |> Sequence.map ~f:(fun j -> (lst.(i), lst.(j))))
-  |> Sequence.to_list
+let all_pairs list =
+  let result = ref [] in
+  for i = 0 to Array.length list - 1 do
+    for j = i + 1 to Array.length list - 1 do
+      result := (list.(i), list.(j)) :: !result
+    done
+  done;
+  !result
 
 let distances =
   all_pairs boxes
-  |> List.sort ~compare:(fun (b1, b2) (b3, b4) ->
-    Int.compare (Point3D.distance b1 b2) (Point3D.distance b3 b4))
+  |> List.sort ~compare:Point3D.distance_compare
   |> List.map ~f:(fun (p1, p2) -> (box_id p1, box_id p2))
 
 module DSU = struct
@@ -86,20 +89,20 @@ module DSU = struct
 end
 
 let part1 dists =
-  let dsu = DSU.create 1000 in
+  let dsu = DSU.create (Array.length boxes) in
   Sequence.of_list dists
-  |> Fn.flip Sequence.take 1000
+  |> Fn.flip Sequence.take (Array.length boxes)
   |> Sequence.iter ~f:(fun (i1, i2) -> DSU.union dsu i1 i2);
   let sizes = DSU.roots dsu |> List.map ~f:(DSU.size dsu) |> Array.of_list in
   Array.sort sizes ~compare:(fun a b -> -Int.compare a b);
   sizes.(0) * sizes.(1) * sizes.(2)
 
 let part2 distances =
-  let dsu = DSU.create 1000 in
+  let dsu = DSU.create (Array.length boxes) in
   let p1, p2 =
     List.find_exn distances ~f:(fun (i1, i2) ->
       DSU.union dsu i1 i2;
-      DSU.size dsu i1 = 999)
+      DSU.size dsu i1 = Array.length boxes)
   in
   Point3D.scorep2 boxes.(p1) boxes.(p2)
 
