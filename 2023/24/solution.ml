@@ -110,8 +110,9 @@ let () =
       ]);
   let _ = Solver.check solver [] in
   let model = Solver.get_model solver |> Option.value_exn in
-  let sum = Arithmetic.mk_add ctx [ x; y; z ] in
-  let (Some sum) = Model.eval model sum true in
-  let sum = Arithmetic.Integer.get_big_int sum in
-  printf "%s\n" (Z.to_string sum)
-[@@warning "-8"]
+  let sum = x + y + z in
+  Model.eval model sum true
+  |> Option.value_exn
+  |> Arithmetic.Integer.get_big_int
+  |> Z.to_int
+  |> printf "%d\n"

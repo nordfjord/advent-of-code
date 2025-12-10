@@ -1,6 +1,7 @@
 open Base
 open Stdio
 
+let start = Time_now.nanosecond_counter_for_timing ()
 let lines = In_channel.input_lines stdin
 let tiles = List.map lines ~f:(fun s -> Stdlib.Scanf.sscanf s "%d,%d" (fun x y -> (x, y)))
 
@@ -25,9 +26,9 @@ let intersects edges ((x1, y1), (x2, y2)) =
   List.exists edges ~f:(fun ((ex1, ey1), (ex2, ey2)) ->
     x1 < ex2 && x2 > ex1 && y1 < ey2 && y2 > ey1)
 
-let part1 tiles = all_pairs tiles |> List.map ~f:area |> List.fold ~init:0 ~f:Int.max
+let part1 () = all_pairs tiles |> List.map ~f:area |> List.fold ~init:0 ~f:Int.max
 
-let part2 tiles =
+let part2 () =
   let edges =
     pairwise tiles
     |> List.map ~f:(fun ((x1, y1), (x2, y2)) ->
@@ -43,5 +44,7 @@ let part2 tiles =
   |> List.map ~f:area
   |> List.fold ~init:0 ~f:Int.max
 
-let () = part1 tiles |> printf "Part 1: %d\n"
-let () = part2 tiles |> printf "Part 2: %d\n"
+let () =
+  Prelude.Runner.run part1 part2;
+  let stop = Time_now.nanosecond_counter_for_timing () in
+  printf "Exxecution time: %.3f ms\n" (Int63.to_float Int63.(stop - start) /. 1_000_000.)
