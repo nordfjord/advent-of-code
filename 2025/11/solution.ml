@@ -2,7 +2,6 @@ open Base
 open Stdio
 
 let start = Time_now.nanosecond_counter_for_timing ()
-let lines = In_channel.input_lines stdin
 
 let parse_line line =
   match Str.split (Str.regexp ": ") line with
@@ -11,28 +10,19 @@ let parse_line line =
     (key, value_list)
   | _ -> failwith "Invalid line format"
 
-let data = List.map lines ~f:parse_line
-
 let graph =
-  let tbl = Hashtbl.create (module String) in
-  List.iter data ~f:(fun (key, values) -> Hashtbl.add_exn tbl ~key ~data:values);
-  tbl
+  In_channel.input_lines stdin
+  |> List.map ~f:parse_line
+  |> Hashtbl.of_alist_exn (module String)
 
 let count_paths start target =
-  let memo = Hashtbl.create (module String) in
-  let rec aux target current =
-    if String.equal current target
-    then 1
-    else (
-      match Hashtbl.find memo current with
-      | Some count -> count
-      | None ->
-        let neighbors = Hashtbl.find_multi graph current in
-        let total = List.sum (module Int) neighbors ~f:(aux target) in
-        Hashtbl.add_exn memo ~key:current ~data:total;
-        total)
+  let dfs =
+    Prelude.Func.memo_rec (fun aux current ->
+      if String.equal current target
+      then 1
+      else Hashtbl.find_multi graph current |> List.sum (module Int) ~f:aux)
   in
-  aux target start
+  dfs start
 
 let part1 () = count_paths "you" "out"
 
