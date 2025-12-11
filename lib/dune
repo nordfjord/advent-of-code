@@ -1,3 +1,3 @@
 (library
  (name prelude)
- (libraries unix str base stdio time_now))
+ (libraries unix str base stdio time_now domainslib))

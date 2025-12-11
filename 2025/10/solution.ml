@@ -134,8 +134,6 @@ let part2 () =
     let _ = Optimize.check opt in
     let model = Optimize.get_model opt |> Option.value_exn in
     let p = Model.eval model presses true in
-    printf "Optimizer:\n%s\n" (Optimize.to_string opt);
-    printf "Model:\n%s\n\n" (Model.to_string model);
     p |> Option.value_exn |> Arithmetic.Integer.get_big_int |> Z.to_int
   in
   List.sum (module Int) lines ~f:solve

@@ -20,21 +20,19 @@ let graph =
 
 let count_paths start target =
   let memo = Hashtbl.create (module String) in
-  let rec aux u v =
-    if String.equal u v
+  let rec aux target current =
+    if String.equal current target
     then 1
     else (
-      match Hashtbl.find memo u with
+      match Hashtbl.find memo current with
       | Some count -> count
       | None ->
-        let neighbors = Hashtbl.find_multi graph u in
-        let total =
-          List.fold neighbors ~init:0 ~f:(fun acc neighbor -> acc + aux neighbor v)
-        in
-        Hashtbl.add_exn memo ~key:u ~data:total;
+        let neighbors = Hashtbl.find_multi graph current in
+        let total = List.sum (module Int) neighbors ~f:(aux target) in
+        Hashtbl.add_exn memo ~key:current ~data:total;
         total)
   in
-  aux start target
+  aux target start
 
 let part1 () = count_paths "you" "out"
 
@@ -48,8 +46,6 @@ let part2 () =
   let dac_to_out = count_paths "dac" "out" in
   let path2 = svr_to_fft * fft_to_dac * dac_to_out in
   path1 + path2
-
-(* count_all_paths_containing "svr" "out" [ "dac"; "fft" ] *)
 
 let () =
   Prelude.Runner.run part1 part2;
