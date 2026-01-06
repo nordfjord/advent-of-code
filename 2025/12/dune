@@ -1,0 +1,9 @@
+(executable
+ (name solution)
+ (preprocess (pps ppx_deriving.show ppx_jane))
+ (libraries str base stdio parsexp prelude angstrom))
+
+(env
+ (dev
+  (flags
+   (:standard -warn-error -A))))

@@ -1,8 +1,7 @@
 (executable
  (name solution)
- (libraries prelude str)
- (preprocess
-  (pps ppx_deriving.show ppx_deriving.ord)))
+ (libraries prelude str base stdio)
+ (preprocess (pps ppx_deriving.show ppx_jane)))
 
 (env
  (dev

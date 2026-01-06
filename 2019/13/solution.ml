@@ -1,4 +1,5 @@
-open Printf
+open Base
+open Stdio
 
 type operation =
   | Add of int * int * int
@@ -18,24 +19,17 @@ type computer =
   ; mutable relative_base : int
   }
 
-let rec ( ** ) a = function
-  | 0 -> 1
-  | 1 -> a
-  | n ->
-    let b = a ** (n / 2) in
-    b * b * if n mod 2 = 0 then 1 else a
-
 let get computer i =
   match Hashtbl.find computer.mem i with
-  | x -> x
-  | exception Not_found -> 0
+  | Some x -> x
+  | None -> 0
 
-let set computer i v = Hashtbl.replace computer.mem i v
+let set computer i v = Hashtbl.set computer.mem ~key:i ~data:v
 let get_op computer = get computer computer.ip
 
 let param comp i =
   let op = get_op comp in
-  let mode = op / (10 ** (i + 1)) mod 10 in
+  let mode = op / (10 ** (i + 1)) % 10 in
   match mode with
   | 1 -> comp.ip + i |> get comp
   | 2 -> comp.ip + i |> get comp |> ( + ) comp.relative_base |> get comp
@@ -43,14 +37,14 @@ let param comp i =
 
 let dst_param comp i =
   let op = get_op comp in
-  let mode = op / (10 ** (i + 1)) mod 10 in
+  let mode = op / (10 ** (i + 1)) % 10 in
   match mode with
   | 2 -> get comp (comp.ip + i) + comp.relative_base
   | _ -> get comp (comp.ip + i)
 
 let parse_op computer =
   let op = get_op computer in
-  let operation = op mod 100 in
+  let operation = op % 100 in
   let p = param computer in
   let dp = dst_param computer in
   match operation with
@@ -64,16 +58,15 @@ let parse_op computer =
   | 8 -> Equals (p 1, p 2, dp 3)
   | 9 -> SetRelativeBase (p 1)
   | 99 -> Halt
-  | _ -> failwith ("Invalid opcode " ^ string_of_int op)
+  | _ -> failwith ("Invalid opcode " ^ Int.to_string op)
 
 type run_result =
-  | InputRequested of (int -> run_result)
-  | Out of (int * (unit -> run_result))
+  | Input of (int -> unit)
+  | Out of int
   | Halted
 
 let rec run comp =
-  let op = parse_op comp in
-  match op with
+  match parse_op comp with
   | Add (a, b, dst) ->
     set comp dst (a + b);
     comp.ip <- comp.ip + 4;
@@ -83,17 +76,13 @@ let rec run comp =
     comp.ip <- comp.ip + 4;
     run comp
   | Store dst ->
-    InputRequested
+    Input
       (fun inp ->
         set comp dst inp;
-        comp.ip <- comp.ip + 2;
-        run comp)
+        comp.ip <- comp.ip + 2)
   | Output value ->
-    Out
-      ( value
-      , fun () ->
-          comp.ip <- comp.ip + 2;
-          run comp )
+    comp.ip <- comp.ip + 2;
+    Out value
   | JmpIfTrue (a, b) ->
     comp.ip <- (if a <> 0 then b else comp.ip + 3);
     run comp
@@ -114,110 +103,103 @@ let rec run comp =
     run comp
   | Halt -> Halted
 
-let input = read_line ()
+let input = In_channel.input_line stdin |> Option.value_exn
 
 let get_computer () =
   let program =
-    input |> String.split_on_char ',' |> List.map int_of_string |> Array.of_list
+    String.split input ~on:',' |> List.map ~f:Int.of_string |> Array.of_list
   in
-  let mem = Hashtbl.create (Array.length program) in
+  let mem = Hashtbl.create (module Int) ~size:(Array.length program) in
   for i = 0 to Array.length program - 1 do
-    Hashtbl.add mem i program.(i)
+    Hashtbl.set mem ~key:i ~data:program.(i)
   done;
   { mem; ip = 0; relative_base = 0 }
 
-let get_program () = run (get_computer ())
-
-let instr_seq program input =
-  let p = ref program in
-  let rec get_next = function
-    | Halted -> None
-    | InputRequested f ->
-      (match input () with
-       | None -> failwith "Input expected"
-       | Some i -> get_next (f i))
-    | Out (value, next) ->
-      p := next ();
-      Some value
-  in
-  Seq.of_dispenser (fun () -> get_next !p)
-
-let rec chunk size (seq : 'a Seq.t) () =
-  match seq () with
-  | Seq.Nil -> Seq.Nil
-  | Seq.Cons (x, xs) -> Seq.Cons (Seq.cons x (Seq.take (size - 1) xs), chunk size seq)
+type instr =
+  | DrawBlock of int * int
+  | DrawBall of int * int
+  | DrawPaddle of int * int
+  | DrawWall of int * int
+  | DrawEmpty of int * int
+  | DrawScore of int
+  | SendInput of (int -> unit)
 
 let parse_instr = function
-  | [ x; y; tile ] -> (x, y, tile)
-  | _ -> failwith "Unexpected"
+  | -1, 0, score -> DrawScore score
+  | x, y, 0 -> DrawEmpty (x, y)
+  | x, y, 1 -> DrawWall (x, y)
+  | x, y, 2 -> DrawBlock (x, y)
+  | x, y, 3 -> DrawPaddle (x, y)
+  | x, y, 4 -> DrawBall (x, y)
+  | x, y, _ -> DrawEmpty (x, y)
+
+let play_game computer =
+  let rec aux acc comp =
+    match run comp with
+    | Halted -> None
+    | Input f -> Some (SendInput f)
+    | Out value ->
+      (match acc with
+       | [] -> aux [ value ] comp
+       | [ a ] -> aux [ a; value ] comp
+       | [ a; b ] -> Some (parse_instr (a, b, value))
+       | _ -> failwith "Invalid")
+  in
+  aux [] computer
 
 let part1 () =
-  let floor = Hashtbl.create 300 in
-  instr_seq (get_program ()) (fun () -> None)
-  |> chunk 3
-  |> Seq.map List.of_seq
-  |> Seq.map parse_instr
-  |> Seq.iter (fun (x, y, tile) -> Hashtbl.replace floor (x, y) tile);
-  floor
-  |> Hashtbl.to_seq
-  |> Seq.filter (fun (_, t) -> t = 2)
-  |> Seq.length
-  |> printf "Part 1: %d\n"
+  let computer = get_computer () in
+  let rec aux count =
+    match play_game computer with
+    | Some (DrawBlock _) -> aux count + 1
+    | None -> count
+    | _ -> aux count
+  in
+  aux 0
 
 let print tbl =
-  for i = 0 to 26 do
-    for j = 0 to 80 do
-      match Hashtbl.find_opt tbl (j, i) with
-      | Some 1 when i = 0 -> print_char '_'
-      | Some 1 -> print_char '|'
-      | Some 2 -> print_char '#'
-      | Some 3 -> print_char '_'
-      | Some 4 -> print_char 'o'
-      | None | Some _ -> print_char ' '
-    done;
-    print_char '\n'
-  done
+  Array.map tbl ~f:String.of_array |> String.concat_array ~sep:"\n" |> printf "%s\n"
+
+let next_score s = function
+  | DrawScore s -> s
+  | _ -> s
 
 let part2 () =
-  let floor = Hashtbl.create 300 in
+  let board = Array.init 26 ~f:(fun _ -> Array.create ~len:81 ' ') in
   let computer = get_computer () in
-  Hashtbl.replace computer.mem 0 2;
-  let score = ref 0 in
-  let ball_and_paddle_location () =
-    Hashtbl.to_seq floor
-    |> Seq.filter (fun (_, tile) -> tile = 4 || tile = 3)
-    |> List.of_seq
-    |> function
-    | [ a; b ] ->
-      (match (a, b) with
-       | ((ax, _), 4), ((bx, _), 3) -> (ax, bx)
-       | ((ax, _), 3), ((bx, _), 4) -> (bx, ax)
-       | _ -> raise Not_found)
-    | _ -> raise Not_found
+  set computer 0 2;
+  let update_board = function
+    | DrawBall (x, y) -> board.(y).(x) <- 'o'
+    | DrawPaddle (x, y) -> board.(y).(x) <- '_'
+    | DrawBlock (x, y) -> board.(y).(x) <- '#'
+    | DrawWall (x, 0) -> board.(0).(x) <- '_'
+    | DrawWall (x, y) -> board.(y).(x) <- '|'
+    | DrawEmpty (x, y) -> board.(y).(x) <- ' '
+    | _ -> ()
   in
-  let program = run computer in
-  let inputs =
-    Seq.ints 0
-    |> Seq.map (fun _ ->
-      let ball_x, player_x = ball_and_paddle_location () in
-      print_string "\027[2J";
-      print floor;
-      printf "Score: %d\n%!" !score;
-      compare ball_x player_x)
-    |> Seq.to_dispenser
+  let rec aux ballx paddlex score =
+    let handle_instr = function
+      | SendInput f ->
+        f (compare ballx paddlex);
+        aux ballx paddlex score
+      | DrawScore s -> aux ballx paddlex s
+      | DrawPaddle (x, _) -> aux ballx x score
+      | DrawBall (x, _) -> aux x paddlex score
+      | _ -> aux ballx paddlex score
+    in
+    match play_game computer with
+    | None -> score
+    | Some instr ->
+      update_board instr;
+      printf "\027[2J";
+      print board;
+      printf "Score: %d\n%!" (next_score score instr);
+      handle_instr instr
   in
-  instr_seq program inputs
-  |> chunk 3
-  |> Seq.map List.of_seq
-  |> Seq.map parse_instr
-  |> Seq.iter (fun (x, y, tile) ->
-    match (x, y) with
-    | -1, 0 -> score := tile
-    | _ -> Hashtbl.replace floor (x, y) tile);
-  print_string "\027[2J";
-  print floor;
-  printf "Score: %d\n%!" !score
+  aux 0 0 0
 
 let () =
-  part1 ();
-  part2 ()
+  let p1 = part1 () in
+  let p2 = part2 () in
+  printf "\nPart 1: %d\n" p1;
+  printf "Part 2: %d\n" p2
