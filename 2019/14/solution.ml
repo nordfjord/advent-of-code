@@ -3,7 +3,6 @@ open Prelude
 
 type cost = (string * int) list [@@deriving show]
 type line = cost * (string * int) [@@deriving show]
-type linel = line list
 
 type recipe =
   { amount : int
@@ -27,16 +26,6 @@ let costs =
 
 let tbl = Hashtbl.create 300
 let () = costs |> List.iter (fun n -> Hashtbl.add tbl n.name n)
-
-let merge =
-  StrMap.merge (fun _ a b ->
-    match (a, b) with
-    | Some a, Some b -> if a + b = 0 then None else Some (a + b)
-    | Some 0, None -> None
-    | None, Some 0 -> None
-    | Some a, None -> Some a
-    | None, Some b -> Some b
-    | _ -> None)
 
 let add key value =
   StrMap.update key (function

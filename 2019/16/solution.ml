@@ -9,7 +9,6 @@ let input =
   |> Array.of_seq
 
 let ( % ) n m = abs n mod m
-let apply_fft (a, b) = a * b mod 10
 let base_pattern = [ 0; 1; 0; -1 ]
 
 let create_sequence n =
@@ -43,8 +42,8 @@ let phase_backwards_sum digits =
   |> List.rev
   |> List.fold_left
        (fun (new_list, partial_sum) digit ->
-         let new_sum = partial_sum + digit in
-         ((new_sum mod 10) :: new_list, new_sum))
+          let new_sum = partial_sum + digit in
+          ((new_sum mod 10) :: new_list, new_sum))
        ([], 0)
   |> fst
 

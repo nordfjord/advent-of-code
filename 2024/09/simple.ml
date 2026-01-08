@@ -10,10 +10,6 @@ let parse_line line =
     let x = if i % 2 = 0 then i / 2 else -1 in
     Array.create ~len:(int_of_char count) x)
 
-let print_disk disk =
-  Array.iter disk ~f:(fun x -> if x = -1 then printf "." else printf "%d" x);
-  printf "\n"
-
 let part1 disk =
   let disk = Array.copy disk in
   let rec find_empty i = if disk.(i) = -1 then i else find_empty (i + 1) in

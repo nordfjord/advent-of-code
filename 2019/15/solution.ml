@@ -1,12 +1,13 @@
 open Printf
 open Prelude
+open Base
 open Computer
 
-let input =
-  let fh = open_in "./input.txt" in
-  let line = input_line fh in
-  close_in fh;
-  line
+let input = In_channel.input_line Stdio.stdin |> Option.value_exn
+
+module IntPair = struct
+  type t = int * int [@@deriving compare, hash, sexp]
+end
 
 let robot program =
   let p = ref program in
@@ -42,23 +43,23 @@ type tile =
   | Floor
   | Wall
   | OxygenSystem
-[@@deriving show]
+[@@deriving show, equal]
 
-let get_tile m t = Hashtbl.find_opt m t |> Option.value ~default:Unknown
+let get_tile m t = Hashtbl.find m t |> Option.value ~default:Unknown
 
 let path_to_location path =
-  path |> List.fold_left ~f:(fun loc d -> Point.(loc + direction_vector d)) ~init:(0, 0)
+  List.fold path ~f:(fun loc d -> Point.(loc + direction_vector d)) ~init:(0, 0)
 
 let bfs map =
   let q = Queue.create () in
-  q |> Queue.add [];
-  Hashtbl.add map (0, 0) Floor;
+  Queue.enqueue q [];
+  Hashtbl.set map ~key:(0, 0) ~data:Floor;
   let result = ref [] in
   while not (Queue.is_empty q) do
-    let path = Queue.take q in
+    let path = Queue.dequeue_exn q in
     let location = path_to_location path in
     let tile = get_tile map location in
-    if tile = OxygenSystem
+    if [%equal: tile] tile OxygenSystem
     then result := path
     else
       [ 1; 2; 3; 4 ]
@@ -71,62 +72,63 @@ let bfs map =
         then ()
         else (
           match result with
-          | 0 -> Hashtbl.replace map loc Wall
+          | 0 -> Hashtbl.set map ~key:loc ~data:Wall
           | 1 ->
-            Hashtbl.replace map loc Floor;
-            Queue.add (path @ [ d ]) q
+            Hashtbl.set map ~key:loc ~data:Floor;
+            Queue.enqueue q (path @ [ d ])
           | 2 ->
-            Hashtbl.replace map loc OxygenSystem;
-            Queue.add (path @ [ d ]) q
+            Hashtbl.set map ~key:loc ~data:OxygenSystem;
+            Queue.enqueue q (path @ [ d ])
           | _ -> failwith "Unexpected output"))
   done;
   !result
 
 let part1 () =
-  let map = Hashtbl.create 3000 in
+  let map = Hashtbl.create (module IntPair) ~size:3000 in
   let result = bfs map in
   printf "Part 1: %d\n" (List.length result);
   for i = -19 to 21 do
     for j = -21 to 19 do
-      match Hashtbl.find_opt map (i, j) with
-      | Some Wall -> print_char '#'
-      | Some Floor when (i, j) = (0, 0) -> print_char 'S'
-      | Some Floor -> print_char '.'
-      | Some OxygenSystem -> print_char 'O'
-      | None | Some Unknown -> print_char '?'
+      match Hashtbl.find map (i, j) with
+      | Some Wall -> Stdlib.print_char '#'
+      | Some Floor when i = 0 && j = 0 -> Stdlib.print_char 'S'
+      | Some Floor -> Stdlib.print_char '.'
+      | Some OxygenSystem -> Stdlib.print_char 'O'
+      | None | Some Unknown -> Stdlib.print_char '?'
     done;
-    print_char '\n'
+    Stdlib.print_char '\n'
   done;
   map
 
 let bfs map start =
   let q = Queue.create () in
-  q |> Queue.add (start, 0);
-  let visited = Hashtbl.create 3000 in
-  Hashtbl.add visited start ();
+  Queue.enqueue q (start, 0);
+  let visited = Hash_set.create (module IntPair) ~size:3000 in
+  Hash_set.add visited start;
   let result = ref 0 in
   while not (Queue.is_empty q) do
-    let location, minutes = Queue.take q in
+    let location, minutes = Queue.dequeue_exn q in
     result := max minutes !result;
     [ up; down; left; right ]
     |> List.iter ~f:(fun d ->
       let loc = Point.(location + d) in
-      if Hashtbl.mem visited loc
+      if Hash_set.mem visited loc
       then ()
       else (
         match get_tile map loc with
         | Wall | Unknown -> ()
         | Floor | OxygenSystem ->
-          Hashtbl.add visited loc ();
-          Queue.add (loc, minutes + 1) q))
+          Hash_set.add visited loc;
+          Queue.enqueue q (loc, minutes + 1)))
   done;
   !result
 
 let part2 map =
   let oxygen_loc =
-    Hashtbl.to_seq map
-    |> Seq.find_map (fun (k, v) -> if v = OxygenSystem then Some k else None)
-    |> Option.get
+    Hashtbl.to_alist map
+    |> List.find_map ~f:(fun (k, v) ->
+      if [%equal: tile] v OxygenSystem then Some k else None)
+    |> Option.value_exn
   in
   bfs map oxygen_loc |> printf "Part 2: %d\n"
 

@@ -7,7 +7,7 @@ let input =
   close_in fh;
   line
 
-let rec to_seq p =
+let to_seq p =
   let p = ref p in
   Seq.of_dispenser (fun () ->
     match !p with
@@ -57,10 +57,6 @@ let () =
   |> Seq.fold_left ( + ) 0
   |> printf "Part 1: %d\n"
 
-(* Did this manually *)
-let uncompressed_path =
-  "L,10,R,8,R,8,L,10,R,8,R,8,L,10,L,12,R,8,R,10,R,10,L,12,R,10,L,10,L,12,R,8,R,10,R,10,L,12,R,10,L,10,L,12,R,8,R,10,R,10,L,12,R,10,R,10,L,12,R,10,L,10,R,8,R,8"
-
 let path = "A,A,B,C,B,C,B,C,C,A"
 let a = "L,10,R,8,R,8"
 let b = "L,10,L,12,R,8,R,10"
@@ -85,7 +81,7 @@ let unsafe_dispenser disp () =
 let () =
   print_char '\n';
   let computer = get_computer input in
-  Hashtbl.replace computer.mem 0 2;
+  Base.Hashtbl.set computer.mem ~key:0 ~data:2;
   let program = run computer in
   with_input_output
     program
