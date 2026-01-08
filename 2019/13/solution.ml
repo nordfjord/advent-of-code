@@ -14,17 +14,26 @@ type operation =
   | Halt
 
 type computer =
-  { mem : (int, int) Hashtbl.t
+  { mutable mem : int array
   ; mutable ip : int
   ; mutable relative_base : int
   }
 
-let get computer i =
-  match Hashtbl.find computer.mem i with
-  | Some x -> x
-  | None -> 0
+let get computer i = if i < Array.length computer.mem then computer.mem.(i) else 0
 
-let set computer i v = Hashtbl.set computer.mem ~key:i ~data:v
+let set computer i v =
+  if i >= Array.length computer.mem
+  then (
+    let new_mem = Array.create ~len:(i + 1) 0 in
+    Array.blit
+      ~src:computer.mem
+      ~src_pos:0
+      ~dst:new_mem
+      ~dst_pos:0
+      ~len:(Array.length computer.mem);
+    computer.mem <- new_mem);
+  computer.mem.(i) <- v
+
 let get_op computer = get computer computer.ip
 
 let param comp i =
@@ -109,11 +118,7 @@ let get_computer () =
   let program =
     String.split input ~on:',' |> List.map ~f:Int.of_string |> Array.of_list
   in
-  let mem = Hashtbl.create (module Int) ~size:(Array.length program) in
-  for i = 0 to Array.length program - 1 do
-    Hashtbl.set mem ~key:i ~data:program.(i)
-  done;
-  { mem; ip = 0; relative_base = 0 }
+  { mem = program; ip = 0; relative_base = 0 }
 
 type instr =
   | DrawBlock of int * int
@@ -133,7 +138,7 @@ let parse_instr = function
   | x, y, 4 -> DrawBall (x, y)
   | x, y, _ -> DrawEmpty (x, y)
 
-let play_game computer =
+let next_instr computer =
   let rec aux acc comp =
     match run comp with
     | Halted -> None
@@ -150,7 +155,7 @@ let play_game computer =
 let part1 () =
   let computer = get_computer () in
   let rec aux count =
-    match play_game computer with
+    match next_instr computer with
     | Some (DrawBlock _) -> aux count + 1
     | None -> count
     | _ -> aux count
@@ -187,7 +192,7 @@ let part2 () =
       | DrawBall (x, _) -> aux x paddlex score
       | _ -> aux ballx paddlex score
     in
-    match play_game computer with
+    match next_instr computer with
     | None -> score
     | Some instr ->
       update_board instr;
