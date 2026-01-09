@@ -55,10 +55,7 @@ module Parse = struct
     string "Doors here lead:\n" *> many (string "- " *> dir <* end_of_line) <* end_of_line
 
   let room_name =
-    let* _ = string "== " in
-    let* name = sep_by1 (char ' ') (take_while Char.is_alpha) in
-    let* _ = string " ==\n" in
-    return (String.concat name ~sep:" ")
+    string "== " *> take_till (Char.equal '=') <* string "==\n" >>| String.strip
 
   let items_section =
     string "Items here:\n"
@@ -281,6 +278,6 @@ let run_term c =
   aux c
 
 let () =
-  run_term (computer |> Computer.run);
-  (* run_ascii (computer |> Computer.run); *)
+  (* run_term (computer |> Computer.run); *)
+  run_ascii (computer |> Computer.run);
   printf "Execution time: %.3f ms\n" (sw ())
