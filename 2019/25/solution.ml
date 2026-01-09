@@ -56,9 +56,9 @@ module Parse = struct
 
   let room_name =
     let* _ = string "== " in
-    let* name = take_till (Char.equal '=') in
-    let* _ = string "==\n" in
-    return name
+    let* name = sep_by1 (char ' ') (take_while Char.is_alpha) in
+    let* _ = string " ==\n" in
+    return (String.concat name ~sep:" ")
 
   let items_section =
     string "Items here:\n"
@@ -241,7 +241,7 @@ let run_ascii c =
          let cmd = Command.Take item |> Command.to_string in
          run_ascii (input res cmd) { room with items = tl } path
        | [] ->
-         if String.equal room.name "Security Checkpoint "
+         if String.equal room.name "Security Checkpoint"
          then (
            printf "Attempting to solve security checkpoint...\n";
            let res = solve_security inventory res in
