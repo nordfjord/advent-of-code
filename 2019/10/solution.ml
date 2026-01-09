@@ -1,16 +1,15 @@
-open Printf
+open Stdio
 open Prelude
 
 let points =
-  Aoc.stdin_seq ()
-  |> Seq.mapi (fun y s ->
-    String.to_seqi s
-    |> Seq.filter_map (fun (x, c) ->
+  In_channel.input_lines stdin
+  |> Base.List.concat_mapi ~f:(fun y s ->
+    Base.String.to_list s
+    |> Base.List.filter_mapi ~f:(fun x c ->
       match c with
       | '#' -> Some (x, y)
       | _ -> None))
-  |> Seq.concat
-  |> Array.of_seq
+  |> Array.of_list
 
 let part1 () =
   points
@@ -43,7 +42,7 @@ let part2 () =
         |> List.length ))
     |> Seq.fold_left
          (fun (p, seen) (point, value) ->
-           if value > seen then (point, value) else (p, seen))
+            if value > seen then (point, value) else (p, seen))
          ((0, 0), 0)
   in
   let point =

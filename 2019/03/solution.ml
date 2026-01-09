@@ -50,10 +50,10 @@ let manhattan_distance (x1, y1) (x2, y2) = abs (x1 + x2) + abs (y1 + y2)
 
 let () =
   let lines =
-    Aoc.stdin_seq ()
-    |> Seq.map parse_line
-    |> Seq.map move_list_to_point_list
-    |> Array.of_seq
+    Stdio.In_channel.input_lines Stdio.stdin
+    |> List.map parse_line
+    |> List.map move_list_to_point_list
+    |> Array.of_list
   in
   let line1 = PointSet.of_list lines.(0) in
   let line2 = PointSet.of_list lines.(1) in

@@ -62,9 +62,9 @@ let rec run_program input output program i =
   | Halt -> program.(0)
 
 let get_program () =
-  Prelude.Aoc.stdin_seq ()
-  |> List.of_seq
-  |> List.hd
+  let open Stdio in
+  In_channel.input_line stdin
+  |> Option.get
   |> String.split_on_char ','
   |> List.map int_of_string
   |> Array.of_list

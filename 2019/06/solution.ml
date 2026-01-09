@@ -1,13 +1,13 @@
-open Printf
 open Prelude
+open Stdio
 
 let input =
-  Aoc.stdin_seq ()
-  |> Seq.map (fun s ->
+  In_channel.input_lines stdin
+  |> List.map (fun s ->
     match String.split_on_char ')' s with
     | src :: dest :: _ -> (src, dest)
     | _ -> failwith "Invalid input")
-  |> Array.of_seq
+  |> Array.of_list
 
 let rec count_orbits nodes orbits =
   List.length orbits

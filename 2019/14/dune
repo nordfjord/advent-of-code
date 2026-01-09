@@ -1,8 +1,8 @@
 (executable
  (name solution)
- (libraries prelude str)
+ (libraries prelude str base stdio angstrom)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.ord)))
+  (pps ppx_deriving.show ppx_deriving.ord ppx_jane)))
 
 (env
  (dev

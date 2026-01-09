@@ -18,16 +18,18 @@ end
 
 let part1 instructions =
   instructions
-  |> Seq.concat_map (fun instr -> Instr.toList instr |> List.to_seq)
+  |> List.concat_map (fun instr -> Instr.toList instr)
+  |> List.to_seq
   |> Seq.scan ( + ) 1
   |> Seq.mapi (fun i x -> (i + 1, x))
-  |> Seq.take 221
+  |> Seq.take 220
   |> Seq.filter (fun (i, _) -> i = 20 || (i - 20) mod 40 = 0)
   |> Seq.fold_left (fun sum (i, x) -> sum + (i * x)) 0
 
 let part2 instructions =
   instructions
-  |> Seq.concat_map (fun instr -> Instr.toList instr |> List.to_seq)
+  |> List.concat_map (fun instr -> Instr.toList instr)
+  |> List.to_seq
   |> Seq.scan ( + ) 1
   |> Seq.mapi (fun i spritePosition ->
     let cursorPosition = i mod 40 in
@@ -36,7 +38,7 @@ let part2 instructions =
     if i mod 40 = 0 then printf "\n";
     printf "%c" c)
 
-let instructions = Prelude.Aoc.stdin_seq () |> Seq.filter_map Instr.parse
+let instructions = Stdio.In_channel.input_lines Stdio.stdin |> List.filter_map Instr.parse
 
 let () =
   instructions |> part1 |> printf "Part1: %d\n";

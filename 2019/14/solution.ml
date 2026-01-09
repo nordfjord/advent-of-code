@@ -1,78 +1,86 @@
-open Printf
-open Prelude
+open Base
+open Stdio
 
-type cost = (string * int) list [@@deriving show]
-type line = cost * (string * int) [@@deriving show]
+let sw = Prelude.Stopwatch.start ()
 
-type recipe =
-  { amount : int
-  ; name : string
-  ; cost : (string * int) list
-  }
+module Parse = struct
+  open Angstrom
 
-module StrMap = Map.Make (String)
+  let integer = take_while1 Char.is_digit >>| Int.of_string
+  let name = take_while1 Char.is_alpha
+  let input = integer >>= fun n -> char ' ' *> name >>= fun nm -> return (nm, n)
+  let inputs = sep_by (string ", ") input
 
-let costs =
-  Aoc.stdin_seq ()
-  |> Seq.map (fun s ->
-    Scanf.sscanf s "%s@=> %d %s" (fun left amount t ->
-      let cost =
-        left
-        |> Str.split (Str.regexp_string ", ")
-        |> List.map (fun s -> Scanf.sscanf s "%d %s" (fun amount t -> (t, amount)))
-      in
-      { name = t; amount; cost }))
-  |> List.of_seq
+  let output =
+    let* n = integer <* char ' ' in
+    let* nm = name in
+    return (nm, n)
 
-let tbl = Hashtbl.create 300
-let () = costs |> List.iter (fun n -> Hashtbl.add tbl n.name n)
+  let parser =
+    let* inputs = inputs <* string " => " in
+    let* output = output in
+    return (inputs, output)
 
-let add key value =
-  StrMap.update key (function
-    | None -> if value = 0 then None else Some value
-    | Some x -> if x + value = 0 then None else Some (x + value))
+  let parse_line line =
+    match parse_string ~consume:All parser line with
+    | Ok res -> res
+    | Error msg -> failwith ("Parse error: " ^ msg)
+end
 
-(* Regular integer divison gives us a rounded-down number.
-   In this exercise we need round-up semantics because otherwise we
-   miss the remainder *)
-let div_ceil a b = int_of_float (ceil (float_of_int a /. float_of_int b))
+module Qty = struct
+  type t = string * int [@@deriving sexp, hash, compare]
+end
 
-let rec components (node_type, amount) state =
-  if node_type = "ORE"
-  then state |> add "ORE" amount
-  else (
-    let owned = StrMap.find_opt node_type state |> Option.value ~default:0 in
-    let node = Hashtbl.find tbl node_type in
-    let per_creation = node.amount in
-    let required = amount - owned in
-    let multiplier = div_ceil required per_creation in
-    let next_state =
-      state |> add node_type (-amount) |> add node_type (per_creation * multiplier)
-    in
-    if required < 0
-    then next_state
-    else
-      node.cost
-      |> List.fold_left
-           (fun state (name, amount) -> components (name, amount * multiplier) state)
-           next_state)
+let reactions = Hashtbl.create (module String)
 
-let part1 () =
-  components ("FUEL", 1) StrMap.empty |> StrMap.find "ORE" |> printf "Part 1: %d\n"
+let () =
+  In_channel.input_lines stdin
+  |> List.iter ~f:(fun line ->
+    let inputs, (nm, n) = Parse.parse_line line in
+    Hashtbl.set reactions ~key:nm ~data:(n, inputs))
 
-let () = part1 ()
+let opt_add x = function
+  | None -> x
+  | Some y -> x + y
 
-let rec binary_search f target low high =
-  if high = low
-  then if f low > target then low - 1 else low
-  else (
-    let mid = (low + high) / 2 in
-    if f mid > target
-    then binary_search f target low (mid - 1)
-    else if f mid < target
-    then binary_search f target (mid + 1) high
-    else mid)
+let ore_needed (node_type, amount) =
+  let state = Hashtbl.create (module String) in
+  let rec aux (nt, amt) =
+    if String.(nt = "ORE")
+    then Hashtbl.update state "ORE" ~f:(opt_add amt)
+    else (
+      let owned = Hashtbl.find state nt |> Option.value ~default:0 in
+      let qty, inputs = Hashtbl.find_exn reactions nt in
+      let needed = amt - owned in
+      let times = Float.(iround_up_exn (of_int needed / of_int qty)) in
+      (* we remove the used amount first, then add the produced amount *)
+      Hashtbl.update state nt ~f:(opt_add (-amt));
+      Hashtbl.update state nt ~f:(opt_add (times * qty));
+      if needed < 0
+      then ()
+      else
+        List.iter inputs ~f:(fun (name, qty) ->
+          let total_in_qty = qty * times in
+          aux (name, total_in_qty)))
+  in
+  aux (node_type, amount);
+  Hashtbl.find_exn state "ORE"
 
-let run count = components ("FUEL", count) StrMap.empty |> StrMap.find "ORE"
-let part2 () = binary_search run 1_000_000_000_000 1 10_000_000 |> printf "Part 2: %d\n"
-let () = part2 ()
+let part1 () = ore_needed ("FUEL", 1)
+
+let fuel_produced ore_count =
+  let rec search low high =
+    if low >= high
+    then low
+    else (
+      let mid = (low + high + 1) / 2 in
+      let ore_for_mid = ore_needed ("FUEL", mid) in
+      if ore_for_mid > ore_count then search low (mid - 1) else search mid high)
+  in
+  search 1 ore_count
+
+let part2 () = fuel_produced 1_000_000_000_000
+
+let () =
+  Prelude.Runner.run part1 part2;
+  printf "Execution time: %.3f ms\n" (sw ())

@@ -40,13 +40,15 @@ let initial_state =
     String.foldi line ~init:acc ~f:(fun x acc c ->
       if Char.equal c '#' then State.set acc (x, y) else acc))
 
+let in_bounds (x, y) = x >= 0 && x < width && y >= 0 && y < height
+let is_middle (x, y) = x = 2 && y = 2
+
 let simulate state =
   (* - A bug dies (becoming an empty space) unless there is exactly one bug adjacent to it.
      - An empty space becomes infested with a bug if exactly one or two bugs are adjacent to it. *)
   let adjacent (x, y) =
     [ (x - 1, y); (x + 1, y); (x, y - 1); (x, y + 1) ]
-    |> List.filter ~f:(fun (x, y) -> x >= 0 && x < width && y >= 0 && y < height)
-    |> List.count ~f:(fun pos -> State.get state pos)
+    |> List.count ~f:(fun pos -> in_bounds pos && State.get state pos)
   in
   Sequence.range 0 width
   |> Sequence.cartesian_product (Sequence.range 0 height)
@@ -82,13 +84,12 @@ let part2 () =
   let simulate_level inner middle outer =
     Sequence.range 0 width
     |> Sequence.cartesian_product (Sequence.range 0 height)
-    |> Sequence.filter ~f:(fun (x, y) -> not (x = 2 && y = 2))
+    |> Sequence.filter ~f:(Fn.non is_middle)
     |> Sequence.fold ~init:0 ~f:(fun state (x, y) ->
       let count =
         [ (x - 1, y); (x + 1, y); (x, y - 1); (x, y + 1) ]
-        |> List.filter ~f:(fun (x, y) ->
-          x >= 0 && x < width && y >= 0 && y < height && not (x = 2 && y = 2))
-        |> List.count ~f:(fun p -> State.get middle p)
+        |> List.count ~f:(fun p ->
+          in_bounds p && (not (is_middle p)) && State.get middle p)
       in
       let count =
         count
